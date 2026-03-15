@@ -10,6 +10,7 @@ import DetailPendaftar from '../pages/admin/DetailPendaftar/DetailPendaftar'
 import HasilSeleksi from '../pages/admin/HasilSeleksi/HasilSeleksi'
 import KelolaInfo from '../pages/admin/KelolaInfo/KelolaInfo'
 import KelolaAkun from '../pages/admin/KelolaAkun/KelolaAkun'
+import Pengaturan from '../pages/admin/Pengaturan/Pengaturan'
 
 function AppRoutes() {
   return (
@@ -26,6 +27,7 @@ function AppRoutes() {
       <Route path="/admin/seleksi" element={<HasilSeleksi />} />
       <Route path="/admin/pengumuman" element={<KelolaInfo />} />
       <Route path="/admin/operator" element={<KelolaAkun />} />
+      <Route path="/admin/pengaturan" element={<Pengaturan />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   )

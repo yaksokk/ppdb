@@ -7,7 +7,7 @@ const NAV_CONFIG = {
     { icon: RiDashboardLine,  label: 'Dashboard',      path: '/admin/dashboard' },
     { icon: RiGroupLine,      label: 'Data Pendaftar', path: '/admin/pendaftar' },
     { icon: RiInformationLine,label: 'Kelola Info',    path: '/admin/pengumuman' },
-    { icon: RiSettings4Line,  label: 'Pengaturan',     path: '/admin/setting' },
+    { icon: RiSettings4Line,  label: 'Pengaturan',     path: '/admin/pengaturan' },
   ],
   operator: [
     { icon: RiDashboardLine,  label: 'Dashboard',      path: '/admin/dashboard' },
