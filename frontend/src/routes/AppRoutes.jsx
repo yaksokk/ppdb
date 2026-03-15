@@ -6,6 +6,7 @@ import Dashboard from '../pages/admin/Dashboard/Dashboard'
 import DashboardOperator from '../pages/admin/DashboardOperator/DashboardOperator'
 import DashboardPendaftar from '../pages/pendaftar/Dashboard/Dashboard'
 import DataPendaftar from '../pages/admin/DataPendaftar/DataPendaftar'
+import DetailPendaftar from '../pages/admin/DetailPendaftar/DetailPendaftar'
 
 
 function AppRoutes() {
@@ -19,6 +20,7 @@ function AppRoutes() {
       <Route path="/operator/dashboard" element={<DashboardOperator />} />
       <Route path="/pendaftar/dashboard" element={<DashboardPendaftar />} />
       <Route path="/admin/pendaftar" element={<DataPendaftar />} />
+      <Route path="/admin/pendaftar/:id" element={<DetailPendaftar />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   )
