@@ -4,6 +4,7 @@ import Register from '../pages/public/Register/Register'
 import LoginAdmin from '../pages/admin/LoginAdmin/LoginAdmin'
 import Dashboard from '../pages/admin/Dashboard/Dashboard'
 import DashboardOperator from '../pages/admin/DashboardOperator/DashboardOperator'
+import DashboardPendaftar from '../pages/pendaftar/Dashboard/Dashboard'
 
 function AppRoutes() {
   return (
@@ -14,6 +15,7 @@ function AppRoutes() {
       <Route path="/admin/login" element={<LoginAdmin />} />
       <Route path="/admin/dashboard" element={<Dashboard />} />
       <Route path="/operator/dashboard" element={<DashboardOperator />} />
+      <Route path="/pendaftar/dashboard" element={<DashboardPendaftar />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   )
