@@ -12,6 +12,7 @@ import KelolaInfo from '../pages/admin/KelolaInfo/KelolaInfo'
 import KelolaAkun from '../pages/admin/KelolaAkun/KelolaAkun'
 import Pengaturan from '../pages/admin/Pengaturan/Pengaturan'
 import Formulir from '../pages/pendaftar/Formulir/Formulir'
+import UploadDokumen from '../pages/pendaftar/UploadDokumen/UploadDokumen'
 
 function AppRoutes() {
   return (
@@ -30,6 +31,7 @@ function AppRoutes() {
       <Route path="/admin/operator" element={<KelolaAkun />} />
       <Route path="/admin/pengaturan" element={<Pengaturan />} />
       <Route path="/pendaftar/formulir" element={<Formulir />} />
+      <Route path="/pendaftar/dokumen" element={<UploadDokumen />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   )
