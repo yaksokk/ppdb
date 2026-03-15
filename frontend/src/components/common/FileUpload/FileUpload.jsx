@@ -1,4 +1,5 @@
 import { useRef } from 'react'
+import { RiUploadCloud2Line, RiCheckLine } from 'react-icons/ri'
 
 function FileUpload({ label, hint, accept, value, onChange, error, note }) {
     const ref = useRef()
@@ -22,7 +23,7 @@ function FileUpload({ label, hint, accept, value, onChange, error, note }) {
         `}
             >
                 <span className="block text-3xl mb-2">
-                    {value ? '✅' : '⬆️'}
+                    {value ? <RiCheckLine size={28} className="text-success mx-auto mb-2" /> : <RiUploadCloud2Line size={28} className="text-n400 mx-auto mb-2" />}
                 </span>
                 <p className="text-[13px] font-semibold text-n700 mb-1">
                     {value ? value.name : (label || 'Klik untuk upload')}
