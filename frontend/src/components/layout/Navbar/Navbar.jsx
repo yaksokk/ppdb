@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { RiMenuLine, RiCloseLine, RiSchoolLine } from 'react-icons/ri'
 import { Button } from '../../common'
 
@@ -11,6 +12,7 @@ const NAV_LINKS = [
 
 function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false)
+  const navigate = useNavigate()
 
   return (
     <nav className="bg-dark-blue sticky top-0 z-[200] border-b border-white/8">
@@ -31,17 +33,18 @@ function Navbar() {
             <a
               key={link.path}
               href={link.path}
-              className="px-3 py-1.5 text-[13px] text-white/70 font-medium rounded-sm hover:text-white hover:bg-white/8 transition-all duration-150 no-underline">
+              className="px-3 py-1.5 text-[13px] text-white/70 font-medium rounded-sm hover:text-white hover:bg-white/8 transition-all duration-150 no-underline"
+            >
               {link.label}
             </a>
           ))}
         </div>
 
         <div className="hidden md:flex items-center gap-2 ml-auto">
-          <Button variant="ghost" size="sm" onClick={() => window.location.href = '/login'}>
+          <Button variant="ghost" size="sm" onClick={() => navigate('/login')}>
             Masuk
           </Button>
-          <Button size="sm" onClick={() => window.location.href = '/register'}>
+          <Button size="sm" onClick={() => navigate('/register')}>
             Daftar Sekarang
           </Button>
         </div>
@@ -67,8 +70,8 @@ function Navbar() {
             </a>
           ))}
           <div className="flex gap-2 mt-2">
-            <Button variant="ghost" size="sm" fullWidth onClick={() => window.location.href = '/login'}>Masuk</Button>
-            <Button size="sm" fullWidth onClick={() => window.location.href = '/register'}>Daftar</Button>
+            <Button variant="ghost" size="sm" fullWidth onClick={() => navigate('/login')}>Masuk</Button>
+            <Button size="sm" fullWidth onClick={() => navigate('/register')}>Daftar</Button>
           </div>
         </div>
       )}

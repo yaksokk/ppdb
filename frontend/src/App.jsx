@@ -1,13 +1,7 @@
-import { PublicLayout } from './components/layout'
+import AppRoutes from './routes/AppRoutes'
 
 function App() {
-  return (
-    <PublicLayout>
-      <div className="flex items-center justify-center py-20">
-        <p className="text-[13px] text-n500">Konten halaman publik di sini</p>
-      </div>
-    </PublicLayout>
-  )
+  return <AppRoutes />
 }
 
 export default App
