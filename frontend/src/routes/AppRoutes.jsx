@@ -7,7 +7,7 @@ import DashboardOperator from '../pages/admin/DashboardOperator/DashboardOperato
 import DashboardPendaftar from '../pages/pendaftar/Dashboard/Dashboard'
 import DataPendaftar from '../pages/admin/DataPendaftar/DataPendaftar'
 import DetailPendaftar from '../pages/admin/DetailPendaftar/DetailPendaftar'
-
+import HasilSeleksi from '../pages/admin/HasilSeleksi/HasilSeleksi'
 
 function AppRoutes() {
   return (
@@ -21,6 +21,7 @@ function AppRoutes() {
       <Route path="/pendaftar/dashboard" element={<DashboardPendaftar />} />
       <Route path="/admin/pendaftar" element={<DataPendaftar />} />
       <Route path="/admin/pendaftar/:id" element={<DetailPendaftar />} />
+      <Route path="/admin/seleksi" element={<HasilSeleksi />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   )
