@@ -1,3 +1,6 @@
 export { default as Sidebar }      from './Sidebar/Sidebar'
 export { default as Topbar }       from './Topbar/Topbar'
+export { default as Navbar }       from './Navbar/Navbar'
+export { default as Footer }       from './Footer/Footer'
 export { default as AdminLayout }  from './AdminLayout/AdminLayout'
+export { default as PublicLayout } from './PublicLayout/PublicLayout'
