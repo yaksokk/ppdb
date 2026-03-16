@@ -16,11 +16,12 @@ import Pengaturan from '../pages/admin/Pengaturan/Pengaturan'
 import Formulir from '../pages/pendaftar/Formulir/Formulir'
 import UploadDokumen from '../pages/pendaftar/UploadDokumen/UploadDokumen'
 import HasilSeleksiPendaftar from '../pages/pendaftar/HasilSeleksi/HasilSeleksi'
+import Beranda from '../pages/public/Beranda/Beranda'
 
 function AppRoutes() {
   return (
     <Routes>
-      <Route path="/" element={<div>Beranda</div>} />
+      <Route path="/" element={<Beranda />} />
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
       <Route path="/admin/login" element={<LoginAdmin />} />
