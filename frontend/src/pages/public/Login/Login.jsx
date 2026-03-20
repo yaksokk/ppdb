@@ -10,7 +10,7 @@ function Login() {
   const navigate = useNavigate()
   const { setAuth } = useAuthStore()
   const [showPassword, setShowPassword] = useState(false)
-  const [form, setForm]     = useState({ email: '', password: '' })
+  const [form, setForm] = useState({ email: '', password: '' })
   const [errors, setErrors] = useState({})
   const [loading, setLoading] = useState(false)
 
@@ -22,7 +22,7 @@ function Login() {
   const handleSubmit = async (e) => {
     e.preventDefault()
     const errs = {}
-    if (!form.email)    errs.email    = 'Email wajib diisi'
+    if (!form.email) errs.email = 'Email wajib diisi'
     if (!form.password) errs.password = 'Kata sandi wajib diisi'
     if (Object.keys(errs).length) return setErrors(errs)
 
@@ -30,13 +30,14 @@ function Login() {
     try {
       const res = await authService.login(form)
       const { token, user } = res.data
-      setAuth(user, token)
 
-      if (user.role === 'pendaftar') {
-        navigate('/pendaftar/dashboard')
-      } else {
-        navigate('/admin/dashboard')
+      if (user.role !== 'pendaftar') {
+        setErrors({ email: 'Gunakan halaman Login Admin untuk masuk sebagai Admin atau Operator' })
+        return
       }
+
+      setAuth(user, token)
+      navigate('/pendaftar/dashboard')
     } catch (err) {
       const msg = err.response?.data?.errors?.email?.[0] || 'Email atau password salah'
       setErrors({ email: msg })
