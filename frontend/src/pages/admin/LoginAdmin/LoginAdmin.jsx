@@ -1,28 +1,55 @@
 import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { RiSchoolLine, RiEyeLine, RiEyeOffLine, RiShieldUserLine, RiUserSettingsLine } from 'react-icons/ri'
-import { Button } from '../../../components/common'
+import { Button, Spinner } from '../../../components/common'
 import { FormInput } from '../../../components/form'
+import authService from '../../../services/auth.service'
+import useAuthStore from '../../../store/authStore'
 
 function LoginAdmin() {
   const navigate = useNavigate()
+  const { setAuth } = useAuthStore()
   const [showPassword, setShowPassword] = useState(false)
-  const [role, setRole] = useState('admin')
-  const [form, setForm] = useState({ email: '', password: '' })
+  const [role, setRole]     = useState('admin')
+  const [form, setForm]     = useState({ email: '', password: '' })
   const [errors, setErrors] = useState({})
+  const [loading, setLoading] = useState(false)
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value })
     setErrors({ ...errors, [e.target.name]: '' })
   }
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
     const errs = {}
     if (!form.email)    errs.email    = 'Email wajib diisi'
     if (!form.password) errs.password = 'Kata sandi wajib diisi'
     if (Object.keys(errs).length) return setErrors(errs)
-    navigate('/admin/dashboard')
+
+    setLoading(true)
+    try {
+      const res = await authService.login(form)
+      const { token, user } = res.data
+
+      if (user.role !== 'admin' && user.role !== 'operator') {
+        setErrors({ email: 'Akun ini bukan admin atau operator' })
+        return
+      }
+
+      setAuth(user, token)
+
+      if (user.role === 'admin') {
+        navigate('/admin/dashboard')
+      } else {
+        navigate('/operator/dashboard')
+      }
+    } catch (err) {
+      const msg = err.response?.data?.errors?.email?.[0] || 'Email atau password salah'
+      setErrors({ email: msg })
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -57,8 +84,7 @@ function LoginAdmin() {
                 : 'bg-white text-n500 border-n200 hover:bg-n50'}
             `}
           >
-            <RiUserSettingsLine size={14} />
-            Admin
+            <RiUserSettingsLine size={14} /> Admin
           </button>
           <button
             type="button"
@@ -71,8 +97,7 @@ function LoginAdmin() {
                 : 'bg-white text-n500 border-n200 hover:bg-n50'}
             `}
           >
-            <RiShieldUserLine size={14} />
-            Operator
+            <RiShieldUserLine size={14} /> Operator
           </button>
         </div>
 
@@ -108,8 +133,10 @@ function LoginAdmin() {
             </button>
           </div>
 
-          <Button type="submit" fullWidth>
-            Masuk sebagai {role === 'admin' ? 'Admin' : 'Operator'}
+          <Button type="submit" fullWidth disabled={loading}>
+            {loading
+              ? <><Spinner size="sm" color="white" /> Memproses...</>
+              : `Masuk sebagai ${role === 'admin' ? 'Admin' : 'Operator'}`}
           </Button>
         </form>
 

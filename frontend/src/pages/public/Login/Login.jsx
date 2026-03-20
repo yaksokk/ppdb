@@ -1,33 +1,52 @@
 import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
-import { RiSchoolLine, RiEyeLine, RiEyeOffLine, RiShieldUserLine, RiUserSettingsLine } from 'react-icons/ri'
-import { Button } from '../../../components/common'
+import { RiSchoolLine, RiEyeLine, RiEyeOffLine } from 'react-icons/ri'
+import { Button, Spinner } from '../../../components/common'
 import { FormInput } from '../../../components/form'
+import authService from '../../../services/auth.service'
+import useAuthStore from '../../../store/authStore'
 
 function Login() {
   const navigate = useNavigate()
+  const { setAuth } = useAuthStore()
   const [showPassword, setShowPassword] = useState(false)
-  const [form, setForm] = useState({ email: '', password: '' })
+  const [form, setForm]     = useState({ email: '', password: '' })
   const [errors, setErrors] = useState({})
+  const [loading, setLoading] = useState(false)
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value })
     setErrors({ ...errors, [e.target.name]: '' })
   }
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
     const errs = {}
     if (!form.email)    errs.email    = 'Email wajib diisi'
-    if (!form.password) errs.password = 'Password wajib diisi'
+    if (!form.password) errs.password = 'Kata sandi wajib diisi'
     if (Object.keys(errs).length) return setErrors(errs)
-    navigate('/pendaftar/dashboard')
+
+    setLoading(true)
+    try {
+      const res = await authService.login(form)
+      const { token, user } = res.data
+      setAuth(user, token)
+
+      if (user.role === 'pendaftar') {
+        navigate('/pendaftar/dashboard')
+      } else {
+        navigate('/admin/dashboard')
+      }
+    } catch (err) {
+      const msg = err.response?.data?.errors?.email?.[0] || 'Email atau password salah'
+      setErrors({ email: msg })
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 py-8"
-      style={{ background: 'linear-gradient(135deg, #0F2B5B 0%, #1E3A8A 60%, #2563EB 100%)' }}
-    >
+    <div className="min-h-screen bg-n100 flex items-center justify-center px-4 py-8">
       <div className="bg-white border border-n200 rounded-xl p-8 w-full max-w-[370px] shadow-md">
 
         <div className="flex justify-center mb-1.5">
@@ -75,8 +94,8 @@ function Login() {
             </button>
           </div>
 
-          <Button type="submit" fullWidth>
-            Masuk ke Akun
+          <Button type="submit" fullWidth disabled={loading}>
+            {loading ? <><Spinner size="sm" color="white" /> Memproses...</> : 'Masuk ke Akun'}
           </Button>
         </form>
 
@@ -88,13 +107,11 @@ function Login() {
         </div>
 
         <div className="flex gap-2 mb-4">
-          <Button variant="ghost" size="sm" fullWidth onClick={() => navigate('/admin/login?role=admin')}>
-             <RiUserSettingsLine size={14} />
-             Admin
-          </Button>
           <Button variant="ghost" size="sm" fullWidth onClick={() => navigate('/admin/login?role=operator')}>
-            <RiShieldUserLine size={14} />
             Operator
+          </Button>
+          <Button variant="ghost" size="sm" fullWidth onClick={() => navigate('/admin/login?role=admin')}>
+            Admin
           </Button>
         </div>
 
@@ -105,7 +122,7 @@ function Login() {
               Daftar di sini
             </Link>
           </p>
-          <Link to="/" className="text-[11px] text-primary hover:text-n600">
+          <Link to="/" className="text-[11px] text-n400 hover:text-n600">
             ← Kembali ke Beranda
           </Link>
         </div>
