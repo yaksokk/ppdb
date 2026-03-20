@@ -13,6 +13,7 @@ return new class extends Migration
             $table->foreignId('pendaftaran_id')->constrained('pendaftaran')->onDelete('cascade');
             $table->decimal('nilai', 5, 2)->nullable();
             $table->integer('ranking')->nullable();
+            $table->decimal('skor_saw', 8, 4)->nullable();
             $table->boolean('status_lulus')->nullable();
             $table->text('catatan')->nullable();
             $table->foreignId('input_by')->nullable()->constrained('users')->onDelete('set null');
