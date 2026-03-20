@@ -128,7 +128,7 @@ class PendaftarController extends Controller
     public function status(Request $request)
     {
         $user        = $request->user();
-        $pendaftaran = Pendaftaran::with(['dataDiri', 'jalur', 'dokumen'])
+        $pendaftaran = Pendaftaran::with(['dataDiri', 'dataOrangTua', 'jalur', 'dokumen'])
                                   ->where('user_id', $user->id)
                                   ->first();
 
