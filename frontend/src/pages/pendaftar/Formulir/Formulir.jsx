@@ -10,20 +10,20 @@ import useAuthStore from '../../../store/authStore'
 const user_avatarStyle = { background: 'rgba(37,99,235,.25)', color: '#93C5FD' }
 
 const JALUR_ICONS = {
-  zonasi:   { icon: RiHomeSmileLine, color: 'text-primary' },
-  prestasi: { icon: RiTrophyLine,    color: 'text-warning' },
-  afirmasi: { icon: RiHeartLine,     color: 'text-amber-500' },
-  mutasi:   { icon: RiExchangeLine,  color: 'text-cyan' },
+  zonasi: { icon: RiHomeSmileLine, color: 'text-primary' },
+  prestasi: { icon: RiTrophyLine, color: 'text-warning' },
+  afirmasi: { icon: RiHeartLine, color: 'text-amber-500' },
+  mutasi: { icon: RiExchangeLine, color: 'text-cyan' },
 }
 
 function Formulir() {
-  const navigate        = useNavigate()
-  const { user }        = useAuthStore()
-  const [jalurList, setJalurList]   = useState([])
-  const [jalurId, setJalurId]       = useState(null)
-  const [loading, setLoading]       = useState(false)
+  const navigate = useNavigate()
+  const { user } = useAuthStore()
+  const [jalurList, setJalurList] = useState([])
+  const [jalurId, setJalurId] = useState(null)
+  const [loading, setLoading] = useState(false)
   const [loadingInit, setLoadingInit] = useState(true)
-  const [errors, setErrors]         = useState({})
+  const [errors, setErrors] = useState({})
   const [successMsg, setSuccessMsg] = useState('')
 
   const [form, setForm] = useState({
@@ -37,9 +37,32 @@ function Formulir() {
     import('../../../services/api').then(({ default: api }) => {
       api.get('/jalur-masuk').then(res => {
         setJalurList(res.data.jalur)
-        if (res.data.jalur.length > 0) setJalurId(res.data.jalur[0].id)
-      }).catch(() => {})
-      .finally(() => setLoadingInit(false))
+      }).catch(() => { })
+
+      pendaftarService.getStatus().then(res => {
+        const p = res.data.pendaftaran
+        if (p) {
+          setJalurId(p.jalur_id)
+          if (p.data_diri) {
+            setForm({
+              nama_lengkap: p.data_diri.nama_lengkap || '',
+              nisn: p.data_diri.nisn || '',
+              jenis_kelamin: p.data_diri.jenis_kelamin || 'Laki-laki',
+              agama: p.data_diri.agama || 'Kristen Protestan',
+              tempat_lahir: p.data_diri.tempat_lahir || '',
+              tgl_lahir: p.data_diri.tgl_lahir || '',
+              asal_sekolah: p.data_diri.asal_sekolah || '',
+              tahun_lulus: p.data_diri.tahun_lulus || '',
+              nama_ortu: p.data_orang_tua?.nama || '',
+              hubungan: p.data_orang_tua?.hubungan || 'Ayah',
+              pekerjaan: p.data_orang_tua?.pekerjaan || '',
+              no_telepon: p.data_orang_tua?.no_telepon || '',
+              alamat: p.data_orang_tua?.alamat || '',
+            })
+          }
+        }
+      }).catch(() => { })
+        .finally(() => setLoadingInit(false))
     })
   }, [])
 
@@ -51,14 +74,14 @@ function Formulir() {
   const validate = () => {
     const errs = {}
     if (!form.nama_lengkap) errs.nama_lengkap = 'Wajib diisi'
-    if (!form.nisn)         errs.nisn         = 'Wajib diisi'
+    if (!form.nisn) errs.nisn = 'Wajib diisi'
     if (!form.tempat_lahir) errs.tempat_lahir = 'Wajib diisi'
-    if (!form.tgl_lahir)    errs.tgl_lahir    = 'Wajib diisi'
+    if (!form.tgl_lahir) errs.tgl_lahir = 'Wajib diisi'
     if (!form.asal_sekolah) errs.asal_sekolah = 'Wajib diisi'
-    if (!form.tahun_lulus)  errs.tahun_lulus  = 'Wajib diisi'
-    if (!form.nama_ortu)    errs.nama_ortu    = 'Wajib diisi'
-    if (!form.no_telepon)   errs.no_telepon   = 'Wajib diisi'
-    if (!jalurId)           errs.jalur        = 'Pilih jalur pendaftaran'
+    if (!form.tahun_lulus) errs.tahun_lulus = 'Wajib diisi'
+    if (!form.nama_ortu) errs.nama_ortu = 'Wajib diisi'
+    if (!form.no_telepon) errs.no_telepon = 'Wajib diisi'
+    if (!jalurId) errs.jalur = 'Pilih jalur pendaftaran'
     return errs
   }
 
@@ -109,13 +132,13 @@ function Formulir() {
         <div className="bg-white border border-n200 rounded-lg p-5 shadow-xs">
           <p className="text-[15px] font-bold font-poppins text-primary mb-4">A · Data Identitas Calon Siswa</p>
           <div className="grid grid-cols-2 gap-x-4">
-            <FormInput label="Nama Lengkap"      name="nama_lengkap"  value={form.nama_lengkap}  onChange={handleChange} error={errors.nama_lengkap}  required />
-            <FormInput label="NISN"              name="nisn"          value={form.nisn}          onChange={handleChange} error={errors.nisn}          required />
-            <FormSelect label="Jenis Kelamin"    name="jenis_kelamin" value={form.jenis_kelamin} onChange={handleChange} required>
+            <FormInput label="Nama Lengkap" name="nama_lengkap" value={form.nama_lengkap} onChange={handleChange} error={errors.nama_lengkap} required />
+            <FormInput label="NISN" name="nisn" value={form.nisn} onChange={handleChange} error={errors.nisn} required />
+            <FormSelect label="Jenis Kelamin" name="jenis_kelamin" value={form.jenis_kelamin} onChange={handleChange} required>
               <option>Laki-laki</option>
               <option>Perempuan</option>
             </FormSelect>
-            <FormSelect label="Agama"            name="agama"         value={form.agama}         onChange={handleChange} required>
+            <FormSelect label="Agama" name="agama" value={form.agama} onChange={handleChange} required>
               <option>Islam</option>
               <option>Kristen Protestan</option>
               <option>Katolik</option>
@@ -123,24 +146,24 @@ function Formulir() {
               <option>Buddha</option>
               <option>Konghucu</option>
             </FormSelect>
-            <FormInput label="Tempat Lahir"      name="tempat_lahir"  value={form.tempat_lahir}  onChange={handleChange} error={errors.tempat_lahir}  required />
-            <FormInput label="Tanggal Lahir"     name="tgl_lahir"     type="date" value={form.tgl_lahir} onChange={handleChange} error={errors.tgl_lahir} required />
-            <FormInput label="Asal Sekolah SD/MI" name="asal_sekolah" value={form.asal_sekolah}  onChange={handleChange} error={errors.asal_sekolah}  required />
-            <FormInput label="Tahun Lulus SD"    name="tahun_lulus"   value={form.tahun_lulus}   onChange={handleChange} error={errors.tahun_lulus}   required />
+            <FormInput label="Tempat Lahir" name="tempat_lahir" value={form.tempat_lahir} onChange={handleChange} error={errors.tempat_lahir} required />
+            <FormInput label="Tanggal Lahir" name="tgl_lahir" type="date" value={form.tgl_lahir} onChange={handleChange} error={errors.tgl_lahir} required />
+            <FormInput label="Asal Sekolah SD/MI" name="asal_sekolah" value={form.asal_sekolah} onChange={handleChange} error={errors.asal_sekolah} required />
+            <FormInput label="Tahun Lulus SD" name="tahun_lulus" value={form.tahun_lulus} onChange={handleChange} error={errors.tahun_lulus} required />
           </div>
         </div>
 
         <div className="bg-white border border-n200 rounded-lg p-5 shadow-xs">
           <p className="text-[15px] font-bold font-poppins text-primary mb-4">B · Data Orang Tua / Wali</p>
           <div className="grid grid-cols-2 gap-x-4">
-            <FormInput label="Nama Orang Tua / Wali" name="nama_ortu"   placeholder="Nama lengkap" value={form.nama_ortu}  onChange={handleChange} error={errors.nama_ortu} required />
-            <FormSelect label="Hubungan"              name="hubungan"    value={form.hubungan}      onChange={handleChange} required>
+            <FormInput label="Nama Orang Tua / Wali" name="nama_ortu" placeholder="Nama lengkap" value={form.nama_ortu} onChange={handleChange} error={errors.nama_ortu} required />
+            <FormSelect label="Hubungan" name="hubungan" value={form.hubungan} onChange={handleChange} required>
               <option>Ayah</option>
               <option>Ibu</option>
               <option>Wali</option>
             </FormSelect>
-            <FormInput label="Pekerjaan"  name="pekerjaan"  placeholder="Jenis pekerjaan" value={form.pekerjaan}  onChange={handleChange} />
-            <FormInput label="No. Telepon" name="no_telepon" placeholder="0812-XXXX-XXXX"  value={form.no_telepon} onChange={handleChange} error={errors.no_telepon} required />
+            <FormInput label="Pekerjaan" name="pekerjaan" placeholder="Jenis pekerjaan" value={form.pekerjaan} onChange={handleChange} />
+            <FormInput label="No. Telepon" name="no_telepon" placeholder="0812-XXXX-XXXX" value={form.no_telepon} onChange={handleChange} error={errors.no_telepon} required />
           </div>
           <FormTextarea label="Alamat Lengkap Domisili" name="alamat" placeholder="Jl. ..., Desa/Kel, Kecamatan, Kota/Kab" value={form.alamat} onChange={handleChange} />
         </div>
@@ -152,7 +175,7 @@ function Formulir() {
           <div className="grid grid-cols-2 gap-3">
             {jalurList.map(j => {
               const config = JALUR_ICONS[j.kode] || { icon: RiHomeSmileLine, color: 'text-primary' }
-              const Icon   = config.icon
+              const Icon = config.icon
               return (
                 <div
                   key={j.id}
