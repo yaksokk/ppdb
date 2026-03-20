@@ -1,22 +1,10 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { RiSearchLine } from 'react-icons/ri'
-import { Badge, Button, Table, Tr, Td, Pagination, EmptyState } from '../../../components/common'
+import { Badge, Button, Table, Tr, Td, Pagination, EmptyState, Spinner } from '../../../components/common'
 import AdminLayout from '../../../components/layout/AdminLayout/AdminLayout'
-
-const user = {
-  name: 'Mariska Dondokambey',
-  avatarStyle: { background: 'rgba(22,163,74,.2)', color: '#86EFAC' },
-}
-
-const DUMMY_DATA = [
-  { id: 1, noDaftar: 'PPDB-2025-001', nama: 'Ahmad Santoso',    jk: 'Laki-laki',  asalSekolah: 'SDN 1 Tumpaan', jalur: 'Prestasi', status: 'menunggu' },
-  { id: 2, noDaftar: 'PPDB-2025-002', nama: 'Dewi Kusuma',      jk: 'Perempuan',  asalSekolah: 'SDN 1 Tumpaan', jalur: 'Prestasi', status: 'perbaikan' },
-  { id: 3, noDaftar: 'PPDB-2025-003', nama: 'Rizky Alamsyah',   jk: 'Laki-laki',  asalSekolah: 'MI Tumpaan',    jalur: 'Zonasi',   status: 'menunggu' },
-  { id: 4, noDaftar: 'PPDB-2025-004', nama: 'Fira Nainggolan',  jk: 'Perempuan',  asalSekolah: 'SDN 2 Tumpaan', jalur: 'Prestasi', status: 'perbaikan' },
-  { id: 5, noDaftar: 'PPDB-2025-005', nama: 'Kevin Maramis',    jk: 'Laki-laki',  asalSekolah: 'SDN 3 Tumpaan', jalur: 'Zonasi',   status: 'menunggu' },
-  { id: 6, noDaftar: 'PPDB-2025-006', nama: 'Siti Rahayu',      jk: 'Perempuan',  asalSekolah: 'SDN 2 Tumpaan', jalur: 'Zonasi',   status: 'diterima' },
-]
+import operatorService from '../../../services/operator.service'
+import useAuthStore from '../../../store/authStore'
 
 const STATUS_LABEL = {
   menunggu:  'Menunggu',
@@ -27,23 +15,41 @@ const STATUS_LABEL = {
 }
 
 function DataPendaftar() {
-  const navigate = useNavigate()
-  const [search, setSearch]       = useState('')
+  const navigate        = useNavigate()
+  const { user }        = useAuthStore()
+  const [data, setData]               = useState([])
+  const [meta, setMeta]               = useState({})
+  const [loading, setLoading]         = useState(true)
+  const [search, setSearch]           = useState('')
   const [filterStatus, setFilterStatus] = useState('')
   const [filterJalur, setFilterJalur]   = useState('')
-  const [page, setPage]           = useState(1)
+  const [page, setPage]               = useState(1)
 
-  const filtered = DUMMY_DATA.filter(d => {
-    const matchSearch = d.nama.toLowerCase().includes(search.toLowerCase()) ||
-                        d.noDaftar.toLowerCase().includes(search.toLowerCase())
-    const matchStatus = filterStatus ? d.status === filterStatus : true
-    const matchJalur  = filterJalur  ? d.jalur === filterJalur   : true
-    return matchSearch && matchStatus && matchJalur
-  })
+  const userObj = {
+    name: user?.name || 'Operator',
+    avatarStyle: { background: 'rgba(22,163,74,.2)', color: '#86EFAC' },
+  }
+
+  const fetchData = (params = {}) => {
+    setLoading(true)
+    operatorService.getListPendaftar({ search, status: filterStatus, page, ...params })
+      .then(res => {
+        setData(res.data.data)
+        setMeta(res.data)
+      })
+      .catch(err => console.error(err))
+      .finally(() => setLoading(false))
+  }
+
+  useEffect(() => { fetchData() }, [page])
+
+  const handleSearch = () => {
+    setPage(1)
+    fetchData({ page: 1 })
+  }
 
   return (
-    <AdminLayout role="operator" user={user} activePath="/admin/pendaftar">
-
+    <AdminLayout role="operator" user={userObj} activePath="/admin/pendaftar">
       <div className="mb-5">
         <h1 className="text-[19px] font-extrabold font-poppins text-n800">Data Pendaftar</h1>
       </div>
@@ -56,15 +62,13 @@ function DataPendaftar() {
             placeholder="Cari nama / No. Daftar..."
             value={search}
             onChange={e => setSearch(e.target.value)}
-            className="w-full pl-8 pr-3 py-[9px] text-[13px] border-[1.5px] border-n200 rounded-sm outline-none focus:border-primary focus:shadow-[0_0_0_3px_rgba(37,99,235,.1)] placeholder:text-n400"
+            onKeyDown={e => e.key === 'Enter' && handleSearch()}
+            className="w-full pl-8 pr-3 py-[9px] text-[13px] border-[1.5px] border-n200 rounded-sm outline-none focus:border-primary placeholder:text-n400"
           />
         </div>
 
-        <select
-          value={filterStatus}
-          onChange={e => setFilterStatus(e.target.value)}
-          className="px-3 py-[9px] text-[13px] border-[1.5px] border-n200 rounded-sm outline-none focus:border-primary bg-white cursor-pointer"
-        >
+        <select value={filterStatus} onChange={e => { setFilterStatus(e.target.value); setPage(1); fetchData({ status: e.target.value, page: 1 }) }}
+          className="px-3 py-[9px] text-[13px] border-[1.5px] border-n200 rounded-sm outline-none focus:border-primary bg-white cursor-pointer">
           <option value="">Semua Status</option>
           <option value="menunggu">Menunggu</option>
           <option value="perbaikan">Perbaikan</option>
@@ -73,55 +77,52 @@ function DataPendaftar() {
           <option value="draft">Belum Mengisi</option>
         </select>
 
-        <select
-          value={filterJalur}
-          onChange={e => setFilterJalur(e.target.value)}
-          className="px-3 py-[9px] text-[13px] border-[1.5px] border-n200 rounded-sm outline-none focus:border-primary bg-white cursor-pointer"
-        >
+        <select value={filterJalur} onChange={e => { setFilterJalur(e.target.value); setPage(1); fetchData({ jalur_id: e.target.value, page: 1 }) }}
+          className="px-3 py-[9px] text-[13px] border-[1.5px] border-n200 rounded-sm outline-none focus:border-primary bg-white cursor-pointer">
           <option value="">Semua Jalur</option>
-          <option value="Zonasi">Zonasi</option>
-          <option value="Prestasi">Prestasi</option>
-          <option value="Afirmasi">Afirmasi</option>
-          <option value="Mutasi">Mutasi</option>
+          <option value="1">Zonasi</option>
+          <option value="2">Prestasi</option>
+          <option value="3">Afirmasi</option>
+          <option value="4">Mutasi</option>
         </select>
       </div>
 
-      <Table headers={['No.', 'No. Daftar', 'Nama Siswa', 'Jenis Kelamin', 'Asal Sekolah', 'Jalur', 'Status', 'Aksi']}>
-        {filtered.length === 0 ? (
-          <tr>
-            <td colSpan={8}>
-              <EmptyState icon={RiSearchLine} title="Data tidak ditemukan" description="Coba ubah kata kunci pencarian." />
-            </td>
-          </tr>
-        ) : (
-          filtered.map((d, i) => (
-            <Tr key={d.id}>
-              <Td className="text-n500">{i + 1}</Td>
-              <Td className="font-semibold">{d.noDaftar}</Td>
-              <Td className="font-semibold text-n800">{d.nama}</Td>
-              <Td>{d.jk}</Td>
-              <Td>{d.asalSekolah}</Td>
-              <Td className="font-semibold">{d.jalur}</Td>
-              <Td><Badge variant={d.status}>{STATUS_LABEL[d.status]}</Badge></Td>
-              <Td>
-                <Button
-                  size="xs"
-                  variant={d.status === 'diterima' ? 'ghost' : 'primary'}
-                  onClick={() => navigate(`/admin/pendaftar/${d.id}`)}
-                >
-                  {d.status === 'diterima' ? 'Detail' : 'Verifikasi'}
-                </Button>
-              </Td>
-            </Tr>
-          ))
-        )}
-      </Table>
+      {loading ? (
+        <div className="flex justify-center py-20"><Spinner size="lg" /></div>
+      ) : (
+        <>
+          <Table headers={['No.', 'No. Daftar', 'Nama Siswa', 'Jenis Kelamin', 'Asal Sekolah', 'Jalur', 'Status', 'Aksi']}>
+            {data.length === 0 ? (
+              <tr><td colSpan={8}>
+                <EmptyState icon={RiSearchLine} title="Data tidak ditemukan" description="Coba ubah kata kunci pencarian." />
+              </td></tr>
+            ) : (
+              data.map((d, i) => (
+                <Tr key={d.id}>
+                  <Td className="text-n500">{(page - 1) * 10 + i + 1}</Td>
+                  <Td className="font-semibold">{d.no_pendaftaran}</Td>
+                  <Td className="font-semibold text-n800">{d.data_diri?.nama_lengkap ?? '-'}</Td>
+                  <Td>{d.data_diri?.jenis_kelamin ?? '-'}</Td>
+                  <Td>{d.data_diri?.asal_sekolah ?? '-'}</Td>
+                  <Td className="font-semibold">{d.jalur?.nama ?? '-'}</Td>
+                  <Td><Badge variant={d.status}>{STATUS_LABEL[d.status]}</Badge></Td>
+                  <Td>
+                    <Button size="xs" variant={d.status === 'diterima' ? 'ghost' : 'primary'}
+                      onClick={() => navigate(`/admin/pendaftar/${d.id}`)}>
+                      {d.status === 'diterima' ? 'Detail' : 'Verifikasi'}
+                    </Button>
+                  </Td>
+                </Tr>
+              ))
+            )}
+          </Table>
 
-      <div className="flex items-center justify-between mt-3">
-        <p className="text-[12px] text-n500">{filtered.length} dari {DUMMY_DATA.length} pendaftar ditampilkan</p>
-        <Pagination current={page} total={2} onChange={setPage} />
-      </div>
-
+          <div className="flex items-center justify-between mt-3">
+            <p className="text-[12px] text-n500">{meta.total ?? 0} pendaftar ditemukan</p>
+            <Pagination current={page} total={meta.last_page ?? 1} onChange={setPage} />
+          </div>
+        </>
+      )}
     </AdminLayout>
   )
 }
