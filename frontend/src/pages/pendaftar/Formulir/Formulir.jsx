@@ -1,41 +1,47 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { RiHomeSmileLine, RiTrophyLine, RiHeartLine, RiExchangeLine } from 'react-icons/ri'
-import { Button } from '../../../components/common'
+import { Button, Spinner, Alert } from '../../../components/common'
 import { FormInput, FormSelect, FormTextarea } from '../../../components/form'
 import AdminLayout from '../../../components/layout/AdminLayout/AdminLayout'
+import pendaftarService from '../../../services/pendaftar.service'
+import useAuthStore from '../../../store/authStore'
 
-const user = {
-  name: 'Ahmad Santoso',
-  avatarStyle: { background: 'rgba(37,99,235,.25)', color: '#93C5FD' },
+const user_avatarStyle = { background: 'rgba(37,99,235,.25)', color: '#93C5FD' }
+
+const JALUR_ICONS = {
+  zonasi:   { icon: RiHomeSmileLine, color: 'text-primary' },
+  prestasi: { icon: RiTrophyLine,    color: 'text-warning' },
+  afirmasi: { icon: RiHeartLine,     color: 'text-amber-500' },
+  mutasi:   { icon: RiExchangeLine,  color: 'text-cyan' },
 }
 
-const JALUR = [
-  { id: 'zonasi',   label: 'Zonasi',   desc: 'Berdasarkan jarak domisili ke sekolah',   icon: RiHomeSmileLine,  color: 'text-primary' },
-  { id: 'prestasi', label: 'Prestasi', desc: 'Berdasarkan nilai rapor atau sertifikat',  icon: RiTrophyLine,     color: 'text-warning' },
-  { id: 'afirmasi', label: 'Afirmasi', desc: 'Untuk siswa dari keluarga tidak mampu',    icon: RiHeartLine,      color: 'text-amber-500' },
-  { id: 'mutasi',   label: 'Mutasi',   desc: 'Perpindahan tugas orang tua/wali',        icon: RiExchangeLine,   color: 'text-cyan' },
-]
-
 function Formulir() {
-  const navigate = useNavigate()
+  const navigate        = useNavigate()
+  const { user }        = useAuthStore()
+  const [jalurList, setJalurList]   = useState([])
+  const [jalurId, setJalurId]       = useState(null)
+  const [loading, setLoading]       = useState(false)
+  const [loadingInit, setLoadingInit] = useState(true)
+  const [errors, setErrors]         = useState({})
+  const [successMsg, setSuccessMsg] = useState('')
+
   const [form, setForm] = useState({
-    namaLengkap: 'Ahmad Santoso',
-    nisn: '0123456789',
-    jenisKelamin: 'Laki-laki',
-    agama: 'Kristen Protestan',
-    tempatLahir: 'Manado',
-    tglLahir: '2012-05-14',
-    asalSekolah: 'SDN 1 Tumpaan',
-    tahunLulus: '2025',
-    namaOrtu: '',
-    hubungan: 'Ayah',
-    pekerjaan: '',
-    noTelepon: '',
-    alamat: '',
+    nama_lengkap: '', nisn: '', jenis_kelamin: 'Laki-laki',
+    agama: 'Kristen Protestan', tempat_lahir: '', tgl_lahir: '',
+    asal_sekolah: '', tahun_lulus: '', nama_ortu: '',
+    hubungan: 'Ayah', pekerjaan: '', no_telepon: '', alamat: '',
   })
-  const [jalur, setJalur] = useState('prestasi')
-  const [errors, setErrors] = useState({})
+
+  useEffect(() => {
+    import('../../../services/api').then(({ default: api }) => {
+      api.get('/jalur-masuk').then(res => {
+        setJalurList(res.data.jalur)
+        if (res.data.jalur.length > 0) setJalurId(res.data.jalur[0].id)
+      }).catch(() => {})
+      .finally(() => setLoadingInit(false))
+    })
+  }, [])
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value })
@@ -44,47 +50,72 @@ function Formulir() {
 
   const validate = () => {
     const errs = {}
-    if (!form.namaLengkap) errs.namaLengkap = 'Wajib diisi'
-    if (!form.nisn)        errs.nisn        = 'Wajib diisi'
-    if (!form.tempatLahir) errs.tempatLahir = 'Wajib diisi'
-    if (!form.tglLahir)    errs.tglLahir    = 'Wajib diisi'
-    if (!form.asalSekolah) errs.asalSekolah = 'Wajib diisi'
-    if (!form.tahunLulus)  errs.tahunLulus  = 'Wajib diisi'
-    if (!form.namaOrtu)    errs.namaOrtu    = 'Wajib diisi'
-    if (!form.noTelepon)   errs.noTelepon   = 'Wajib diisi'
-    if (!jalur)            errs.jalur       = 'Pilih jalur pendaftaran'
+    if (!form.nama_lengkap) errs.nama_lengkap = 'Wajib diisi'
+    if (!form.nisn)         errs.nisn         = 'Wajib diisi'
+    if (!form.tempat_lahir) errs.tempat_lahir = 'Wajib diisi'
+    if (!form.tgl_lahir)    errs.tgl_lahir    = 'Wajib diisi'
+    if (!form.asal_sekolah) errs.asal_sekolah = 'Wajib diisi'
+    if (!form.tahun_lulus)  errs.tahun_lulus  = 'Wajib diisi'
+    if (!form.nama_ortu)    errs.nama_ortu    = 'Wajib diisi'
+    if (!form.no_telepon)   errs.no_telepon   = 'Wajib diisi'
+    if (!jalurId)           errs.jalur        = 'Pilih jalur pendaftaran'
     return errs
   }
 
-  const handleSubmit = () => {
-    const errs = validate()
-    if (Object.keys(errs).length) return setErrors(errs)
-    navigate('/pendaftar/dokumen')
+  const handleSubmit = async (isDraft = false) => {
+    if (!isDraft) {
+      const errs = validate()
+      if (Object.keys(errs).length) return setErrors(errs)
+    }
+
+    setLoading(true)
+    try {
+      await pendaftarService.submitFormulir({ ...form, jalur_id: jalurId })
+      if (!isDraft) {
+        navigate('/pendaftar/dokumen')
+      } else {
+        setSuccessMsg('Draft berhasil disimpan!')
+        setTimeout(() => setSuccessMsg(''), 3000)
+      }
+    } catch (err) {
+      const errData = err.response?.data?.errors
+      if (errData) {
+        const mapped = {}
+        Object.keys(errData).forEach(k => { mapped[k] = errData[k][0] })
+        setErrors(mapped)
+      }
+    } finally {
+      setLoading(false)
+    }
   }
 
-  const handleDraft = () => {
-    alert('Draft disimpan!')
-  }
+  const userObj = { name: user?.name || 'Pendaftar', avatarStyle: user_avatarStyle }
+
+  if (loadingInit) return (
+    <AdminLayout role="pendaftar" user={userObj} activePath="/pendaftar/formulir">
+      <div className="flex justify-center py-20"><Spinner size="lg" /></div>
+    </AdminLayout>
+  )
 
   return (
-    <AdminLayout role="pendaftar" user={user} activePath="/pendaftar/formulir">
-
+    <AdminLayout role="pendaftar" user={userObj} activePath="/pendaftar/formulir">
       <div className="mb-5">
         <h1 className="text-[19px] font-extrabold font-poppins text-n800">Formulir Pendaftaran</h1>
       </div>
 
-      <div className="flex flex-col gap-4">
+      {successMsg && <div className="mb-4"><Alert variant="green">{successMsg}</Alert></div>}
 
+      <div className="flex flex-col gap-4">
         <div className="bg-white border border-n200 rounded-lg p-5 shadow-xs">
           <p className="text-[15px] font-bold font-poppins text-primary mb-4">A · Data Identitas Calon Siswa</p>
           <div className="grid grid-cols-2 gap-x-4">
-            <FormInput label="Nama Lengkap"    name="namaLengkap" value={form.namaLengkap} onChange={handleChange} error={errors.namaLengkap} required />
-            <FormInput label="NISN"            name="nisn"        value={form.nisn}        onChange={handleChange} error={errors.nisn}        required />
-            <FormSelect label="Jenis Kelamin"  name="jenisKelamin" value={form.jenisKelamin} onChange={handleChange} required>
-              <option value="Laki-laki">Laki-laki</option>
-              <option value="Perempuan">Perempuan</option>
+            <FormInput label="Nama Lengkap"      name="nama_lengkap"  value={form.nama_lengkap}  onChange={handleChange} error={errors.nama_lengkap}  required />
+            <FormInput label="NISN"              name="nisn"          value={form.nisn}          onChange={handleChange} error={errors.nisn}          required />
+            <FormSelect label="Jenis Kelamin"    name="jenis_kelamin" value={form.jenis_kelamin} onChange={handleChange} required>
+              <option>Laki-laki</option>
+              <option>Perempuan</option>
             </FormSelect>
-            <FormSelect label="Agama" name="agama" value={form.agama} onChange={handleChange} required>
+            <FormSelect label="Agama"            name="agama"         value={form.agama}         onChange={handleChange} required>
               <option>Islam</option>
               <option>Kristen Protestan</option>
               <option>Katolik</option>
@@ -92,24 +123,24 @@ function Formulir() {
               <option>Buddha</option>
               <option>Konghucu</option>
             </FormSelect>
-            <FormInput label="Tempat Lahir"    name="tempatLahir" value={form.tempatLahir} onChange={handleChange} error={errors.tempatLahir} required />
-            <FormInput label="Tanggal Lahir"   name="tglLahir"    type="date" value={form.tglLahir} onChange={handleChange} error={errors.tglLahir} required />
-            <FormInput label="Asal Sekolah SD/MI" name="asalSekolah" value={form.asalSekolah} onChange={handleChange} error={errors.asalSekolah} required />
-            <FormInput label="Tahun Lulus SD"  name="tahunLulus"  value={form.tahunLulus}  onChange={handleChange} error={errors.tahunLulus}  required />
+            <FormInput label="Tempat Lahir"      name="tempat_lahir"  value={form.tempat_lahir}  onChange={handleChange} error={errors.tempat_lahir}  required />
+            <FormInput label="Tanggal Lahir"     name="tgl_lahir"     type="date" value={form.tgl_lahir} onChange={handleChange} error={errors.tgl_lahir} required />
+            <FormInput label="Asal Sekolah SD/MI" name="asal_sekolah" value={form.asal_sekolah}  onChange={handleChange} error={errors.asal_sekolah}  required />
+            <FormInput label="Tahun Lulus SD"    name="tahun_lulus"   value={form.tahun_lulus}   onChange={handleChange} error={errors.tahun_lulus}   required />
           </div>
         </div>
 
         <div className="bg-white border border-n200 rounded-lg p-5 shadow-xs">
           <p className="text-[15px] font-bold font-poppins text-primary mb-4">B · Data Orang Tua / Wali</p>
           <div className="grid grid-cols-2 gap-x-4">
-            <FormInput label="Nama Orang Tua / Wali" name="namaOrtu"   placeholder="Nama lengkap"      value={form.namaOrtu}   onChange={handleChange} error={errors.namaOrtu} required />
-            <FormSelect label="Hubungan" name="hubungan" value={form.hubungan} onChange={handleChange} required>
+            <FormInput label="Nama Orang Tua / Wali" name="nama_ortu"   placeholder="Nama lengkap" value={form.nama_ortu}  onChange={handleChange} error={errors.nama_ortu} required />
+            <FormSelect label="Hubungan"              name="hubungan"    value={form.hubungan}      onChange={handleChange} required>
               <option>Ayah</option>
               <option>Ibu</option>
               <option>Wali</option>
             </FormSelect>
-            <FormInput label="Pekerjaan"  name="pekerjaan"  placeholder="Jenis pekerjaan"          value={form.pekerjaan}  onChange={handleChange} />
-            <FormInput label="No. Telepon" name="noTelepon" placeholder="0812-XXXX-XXXX"            value={form.noTelepon}  onChange={handleChange} error={errors.noTelepon} required />
+            <FormInput label="Pekerjaan"  name="pekerjaan"  placeholder="Jenis pekerjaan" value={form.pekerjaan}  onChange={handleChange} />
+            <FormInput label="No. Telepon" name="no_telepon" placeholder="0812-XXXX-XXXX"  value={form.no_telepon} onChange={handleChange} error={errors.no_telepon} required />
           </div>
           <FormTextarea label="Alamat Lengkap Domisili" name="alamat" placeholder="Jl. ..., Desa/Kel, Kecamatan, Kota/Kab" value={form.alamat} onChange={handleChange} />
         </div>
@@ -119,37 +150,38 @@ function Formulir() {
           <p className="text-[12px] text-n500 mb-4">Pilih satu jalur yang paling sesuai kondisi Anda</p>
           {errors.jalur && <p className="text-[11px] text-danger mb-2">{errors.jalur}</p>}
           <div className="grid grid-cols-2 gap-3">
-            {JALUR.map(j => {
-              const Icon = j.icon
+            {jalurList.map(j => {
+              const config = JALUR_ICONS[j.kode] || { icon: RiHomeSmileLine, color: 'text-primary' }
+              const Icon   = config.icon
               return (
                 <div
                   key={j.id}
-                  onClick={() => { setJalur(j.id); setErrors({ ...errors, jalur: '' }) }}
+                  onClick={() => { setJalurId(j.id); setErrors({ ...errors, jalur: '' }) }}
                   className={`
-                    flex items-center gap-3 p-4 rounded-sm border-2 cursor-pointer transition-all duration-150
-                    ${jalur === j.id
-                      ? 'border-primary bg-primary-light'
-                      : 'border-n200 bg-white hover:border-blue-200 hover:bg-primary-light/50'}
+                    flex items-center gap-3 p-4 rounded-sm border-2 cursor-pointer transition-all
+                    ${jalurId === j.id ? 'border-primary bg-primary-light' : 'border-n200 bg-white hover:border-blue-200'}
                   `}
                 >
-                  <Icon size={20} className={`flex-shrink-0 ${j.color}`} />
+                  <Icon size={20} className={`flex-shrink-0 ${config.color}`} />
                   <div>
-                    <p className="text-[13px] font-bold text-n800">{j.label}</p>
-                    <p className="text-[11px] text-n500">{j.desc}</p>
+                    <p className="text-[13px] font-bold text-n800">{j.nama}</p>
+                    <p className="text-[11px] text-n500">{j.deskripsi}</p>
                   </div>
                 </div>
               )
             })}
           </div>
         </div>
-
       </div>
 
       <div className="flex justify-end gap-2 mt-5">
-        <Button variant="ghost" onClick={handleDraft}>Simpan Draft</Button>
-        <Button onClick={handleSubmit}>Simpan & Lanjutkan →</Button>
+        <Button variant="ghost" onClick={() => handleSubmit(true)} disabled={loading}>
+          Simpan Draft
+        </Button>
+        <Button onClick={() => handleSubmit(false)} disabled={loading}>
+          {loading ? <><Spinner size="sm" color="white" /> Menyimpan...</> : 'Simpan & Lanjutkan →'}
+        </Button>
       </div>
-
     </AdminLayout>
   )
 }

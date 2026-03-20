@@ -7,6 +7,7 @@ use App\Http\Controllers\AdminController;
 use App\Http\Controllers\OperatorController;
 use App\Http\Controllers\SawController;
 use App\Http\Controllers\KriteriaController;
+use App\Models\JalurMasuk;
 
 
 Route::prefix('auth')->group(function () {
@@ -73,5 +74,9 @@ Route::prefix('auth')->group(function () {
         Route::put('/kriteria/{id}',                [KriteriaController::class, 'update']);
         Route::delete('/kriteria/{id}',             [KriteriaController::class, 'destroy']);
         });
+    });
+
+    Route::get('/jalur-masuk', function () {
+        return response()->json(['jalur' => JalurMasuk::where('is_active', true)->get()]);
     });
 });
