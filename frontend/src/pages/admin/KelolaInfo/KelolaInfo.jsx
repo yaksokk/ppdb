@@ -7,11 +7,12 @@ import adminService from '../../../services/admin.service'
 import useAuthStore from '../../../store/authStore'
 
 function KelolaInfo() {
-  const { user }              = useAuthStore()
+  const { user } = useAuthStore()
   const [loading, setLoading] = useState(true)
-  const [saving, setSaving]   = useState(false)
+  const [savingProfil, setSavingProfil] = useState(false)
+  const [savingJadwal, setSavingJadwal] = useState(false)
   const [successMsg, setSuccessMsg] = useState('')
-  const [ppdbBuka, setPpdbBuka]     = useState(true)
+  const [ppdbBuka, setPpdbBuka] = useState(true)
 
   const [profil, setProfil] = useState({
     nama_sekolah: '', alamat: '', email: '', no_telepon: '', kuota_total: '',
@@ -33,17 +34,17 @@ function KelolaInfo() {
         const s = res.data.settings
         setProfil({
           nama_sekolah: s.nama_sekolah || '',
-          alamat:       s.alamat       || '',
-          email:        s.email        || '',
-          no_telepon:   s.no_telepon   || '',
-          kuota_total:  s.kuota_total  || '',
+          alamat: s.alamat || '',
+          email: s.email || '',
+          no_telepon: s.no_telepon || '',
+          kuota_total: s.kuota_total || '',
         })
         setJadwal({
-          tahun_ajaran:     s.tahun_ajaran     || '',
-          tgl_buka:         s.tgl_buka         || '',
-          tgl_tutup:        s.tgl_tutup        || '',
-          tgl_verifikasi:   s.tgl_verifikasi   || '',
-          tgl_pengumuman:   s.tgl_pengumuman   || '',
+          tahun_ajaran: s.tahun_ajaran || '',
+          tgl_buka: s.tgl_buka || '',
+          tgl_tutup: s.tgl_tutup || '',
+          tgl_verifikasi: s.tgl_verifikasi || '',
+          tgl_pengumuman: s.tgl_pengumuman || '',
           tgl_daftar_ulang: s.tgl_daftar_ulang || '',
         })
         setPpdbBuka(s.status_ppdb === 'buka')
@@ -52,16 +53,29 @@ function KelolaInfo() {
       .finally(() => setLoading(false))
   }, [])
 
-  const handleSimpan = async (data) => {
-    setSaving(true)
+  const handleSimpanProfil = async () => {
+    setSavingProfil(true)
     try {
-      await adminService.updateSetting(data)
-      setSuccessMsg('Berhasil disimpan!')
+      await adminService.updateSetting(profil)
+      setSuccessMsg('Profil berhasil disimpan!')
       setTimeout(() => setSuccessMsg(''), 3000)
     } catch (err) {
       console.error(err)
     } finally {
-      setSaving(false)
+      setSavingProfil(false)
+    }
+  }
+
+  const handleSimpanJadwal = async () => {
+    setSavingJadwal(true)
+    try {
+      await adminService.updateSetting(jadwal)
+      setSuccessMsg('Jadwal berhasil disimpan!')
+      setTimeout(() => setSuccessMsg(''), 3000)
+    } catch (err) {
+      console.error(err)
+    } finally {
+      setSavingJadwal(false)
     }
   }
 
@@ -93,29 +107,29 @@ function KelolaInfo() {
       <div className="grid grid-cols-2 gap-4 mb-4">
         <div className="bg-white border border-n200 rounded-lg p-5 shadow-xs">
           <p className="text-[15px] font-bold font-poppins text-primary mb-4">Profil Sekolah</p>
-          <FormInput label="Nama Sekolah"     name="nama_sekolah" value={profil.nama_sekolah} onChange={e => setProfil({ ...profil, nama_sekolah: e.target.value })} />
-          <FormInput label="Alamat"           name="alamat"       value={profil.alamat}       onChange={e => setProfil({ ...profil, alamat: e.target.value })} />
-          <FormInput label="Email"            name="email"        type="email" value={profil.email} onChange={e => setProfil({ ...profil, email: e.target.value })} />
-          <FormInput label="No. Telepon"      name="no_telepon"   value={profil.no_telepon}   onChange={e => setProfil({ ...profil, no_telepon: e.target.value })} />
-          <FormInput label="Kuota Siswa Baru" name="kuota_total"  type="number" value={profil.kuota_total} onChange={e => setProfil({ ...profil, kuota_total: e.target.value })} />
+          <FormInput label="Nama Sekolah" name="nama_sekolah" value={profil.nama_sekolah} onChange={e => setProfil({ ...profil, nama_sekolah: e.target.value })} />
+          <FormInput label="Alamat" name="alamat" value={profil.alamat} onChange={e => setProfil({ ...profil, alamat: e.target.value })} />
+          <FormInput label="Email" name="email" type="email" value={profil.email} onChange={e => setProfil({ ...profil, email: e.target.value })} />
+          <FormInput label="No. Telepon" name="no_telepon" value={profil.no_telepon} onChange={e => setProfil({ ...profil, no_telepon: e.target.value })} />
+          <FormInput label="Kuota Siswa Baru" name="kuota_total" type="number" value={profil.kuota_total} onChange={e => setProfil({ ...profil, kuota_total: e.target.value })} />
           <div className="flex justify-end mt-4">
-            <Button onClick={() => handleSimpan(profil)} disabled={saving}>
-              {saving ? <Spinner size="sm" color="white" /> : 'Simpan'}
+            <Button onClick={handleSimpanProfil} disabled={savingProfil}>
+              {savingProfil ? <Spinner size="sm" color="white" /> : 'Simpan'}
             </Button>
           </div>
         </div>
 
         <div className="bg-white border border-n200 rounded-lg p-5 shadow-xs">
           <p className="text-[15px] font-bold font-poppins text-primary mb-4">Jadwal PPDB</p>
-          <FormInput label="Tahun Ajaran"              name="tahun_ajaran"     value={jadwal.tahun_ajaran}     onChange={e => setJadwal({ ...jadwal, tahun_ajaran: e.target.value })} />
-          <FormInput label="Tanggal Buka Pendaftaran"  name="tgl_buka"         type="date" value={jadwal.tgl_buka}     onChange={e => setJadwal({ ...jadwal, tgl_buka: e.target.value })} />
-          <FormInput label="Tanggal Tutup Pendaftaran" name="tgl_tutup"        type="date" value={jadwal.tgl_tutup}    onChange={e => setJadwal({ ...jadwal, tgl_tutup: e.target.value })} />
-          <FormInput label="Tanggal Verifikasi Berkas" name="tgl_verifikasi"   type="date" value={jadwal.tgl_verifikasi} onChange={e => setJadwal({ ...jadwal, tgl_verifikasi: e.target.value })} />
-          <FormInput label="Tanggal Pengumuman Hasil"  name="tgl_pengumuman"   type="date" value={jadwal.tgl_pengumuman} onChange={e => setJadwal({ ...jadwal, tgl_pengumuman: e.target.value })} />
-          <FormInput label="Tanggal Daftar Ulang"      name="tgl_daftar_ulang" type="date" value={jadwal.tgl_daftar_ulang} onChange={e => setJadwal({ ...jadwal, tgl_daftar_ulang: e.target.value })} />
+          <FormInput label="Tahun Ajaran" name="tahun_ajaran" value={jadwal.tahun_ajaran} onChange={e => setJadwal({ ...jadwal, tahun_ajaran: e.target.value })} />
+          <FormInput label="Tanggal Buka Pendaftaran" name="tgl_buka" type="date" value={jadwal.tgl_buka} onChange={e => setJadwal({ ...jadwal, tgl_buka: e.target.value })} />
+          <FormInput label="Tanggal Tutup Pendaftaran" name="tgl_tutup" type="date" value={jadwal.tgl_tutup} onChange={e => setJadwal({ ...jadwal, tgl_tutup: e.target.value })} />
+          <FormInput label="Tanggal Verifikasi Berkas" name="tgl_verifikasi" type="date" value={jadwal.tgl_verifikasi} onChange={e => setJadwal({ ...jadwal, tgl_verifikasi: e.target.value })} />
+          <FormInput label="Tanggal Pengumuman Hasil" name="tgl_pengumuman" type="date" value={jadwal.tgl_pengumuman} onChange={e => setJadwal({ ...jadwal, tgl_pengumuman: e.target.value })} />
+          <FormInput label="Tanggal Daftar Ulang" name="tgl_daftar_ulang" type="date" value={jadwal.tgl_daftar_ulang} onChange={e => setJadwal({ ...jadwal, tgl_daftar_ulang: e.target.value })} />
           <div className="flex justify-end mt-4">
-            <Button onClick={() => handleSimpan(jadwal)} disabled={saving}>
-              {saving ? <Spinner size="sm" color="white" /> : 'Simpan'}
+            <Button onClick={handleSimpanJadwal} disabled={savingJadwal}>
+              {savingJadwal ? <Spinner size="sm" color="white" /> : 'Simpan'}
             </Button>
           </div>
         </div>
@@ -141,7 +155,7 @@ function KelolaInfo() {
         <div className={`px-3 py-2.5 rounded-sm text-[12px] leading-relaxed border mb-3
           ${ppdbBuka ? 'bg-success-light border-green-200 text-green-800' : 'bg-danger-light border-red-200 text-red-800'}`}>
           {ppdbBuka ? 'Pendaftar dapat mendaftar, isi formulir, dan upload dokumen.'
-                    : 'Pendaftaran ditutup. Pendaftar tidak dapat mendaftar baru.'}
+            : 'Pendaftaran ditutup. Pendaftar tidak dapat mendaftar baru.'}
         </div>
         <div className="bg-primary-light border border-blue-200 rounded-sm px-3 py-2.5 flex gap-2">
           <RiInformationLine size={14} className="text-primary flex-shrink-0 mt-0.5" />
