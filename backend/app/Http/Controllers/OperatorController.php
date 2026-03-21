@@ -12,13 +12,12 @@ class OperatorController extends Controller
 {
     public function listPendaftar(Request $request)
     {
-        $query = Pendaftaran::with(['dataDiri', 'jalur', 'dokumen'])
-                            ->whereIn('status', ['menunggu', 'perbaikan', 'diterima', 'ditolak']);
+        $query = Pendaftaran::with(['dataDiri', 'jalur', 'dokumen']);
 
         if ($request->search) {
             $query->whereHas('dataDiri', function ($q) use ($request) {
                 $q->where('nama_lengkap', 'like', '%' . $request->search . '%')
-                  ->orWhere('nisn', 'like', '%' . $request->search . '%');
+                ->orWhere('nisn', 'like', '%' . $request->search . '%');
             });
         }
 
