@@ -1,36 +1,51 @@
 import { useNavigate } from 'react-router-dom'
 import { RiSchoolLine, RiDashboardLine, RiGroupLine, RiFileList3Line, RiUploadCloud2Line, RiTrophyLine, RiInformationLine, RiSettings4Line, RiLogoutBoxRLine } from 'react-icons/ri'
 import { Avatar } from '../../common'
+import authService from '../../../services/auth.service'
+import useAuthStore from '../../../store/authStore'
 
 const NAV_CONFIG = {
   admin: [
-    { icon: RiDashboardLine,  label: 'Dashboard',      path: '/admin/dashboard' },
-    { icon: RiGroupLine,      label: 'Data Pendaftar', path: '/admin/pendaftar' },
-    { icon: RiInformationLine,label: 'Kelola Info',    path: '/admin/pengumuman' },
-    { icon: RiSettings4Line,  label: 'Pengaturan',     path: '/admin/pengaturan' },
+    { icon: RiDashboardLine, label: 'Dashboard', path: '/admin/dashboard' },
+    { icon: RiGroupLine, label: 'Data Pendaftar', path: '/admin/pendaftar' },
+    { icon: RiInformationLine, label: 'Kelola Info', path: '/admin/pengumuman' },
+    { icon: RiSettings4Line, label: 'Pengaturan', path: '/admin/pengaturan' },
   ],
   operator: [
-    { icon: RiDashboardLine,  label: 'Dashboard',      path: '/admin/dashboard' },
-    { icon: RiGroupLine,      label: 'Data Pendaftar', path: '/admin/pendaftar' },
-    { icon: RiTrophyLine,     label: 'Hasil Seleksi',  path: '/admin/seleksi' },
+    { icon: RiDashboardLine, label: 'Dashboard', path: '/admin/dashboard' },
+    { icon: RiGroupLine, label: 'Data Pendaftar', path: '/admin/pendaftar' },
+    { icon: RiTrophyLine, label: 'Hasil Seleksi', path: '/admin/seleksi' },
   ],
   pendaftar: [
-    { icon: RiDashboardLine,    label: 'Dashboard',      path: '/pendaftar/dashboard' },
-    { icon: RiFileList3Line,    label: 'Formulir',       path: '/pendaftar/formulir' },
+    { icon: RiDashboardLine, label: 'Dashboard', path: '/pendaftar/dashboard' },
+    { icon: RiFileList3Line, label: 'Formulir', path: '/pendaftar/formulir' },
     { icon: RiUploadCloud2Line, label: 'Upload Dokumen', path: '/pendaftar/dokumen' },
   ],
 }
 
 const ROLE_BADGE = {
-  admin:     { label: 'Administrator', cls: 'bg-amber-500/20 text-amber-300 border border-amber-500/25' },
-  operator:  { label: 'Operator PPDB', cls: 'bg-success/20 text-green-300 border border-success/25' },
-  pendaftar: { label: 'Pendaftar',     cls: 'bg-primary/25 text-blue-300 border border-primary/30' },
+  admin: { label: 'Administrator', cls: 'bg-amber-500/20 text-amber-300 border border-amber-500/25' },
+  operator: { label: 'Operator PPDB', cls: 'bg-success/20 text-green-300 border border-success/25' },
+  pendaftar: { label: 'Pendaftar', cls: 'bg-primary/25 text-blue-300 border border-primary/30' },
 }
 
 function Sidebar({ role = 'admin', user = {}, activePath = '', onLogout }) {
   const navigate = useNavigate()
-  const nav      = NAV_CONFIG[role] || []
-  const badge    = ROLE_BADGE[role]
+  const { clearAuth } = useAuthStore()
+  const nav = NAV_CONFIG[role] || []
+  const badge = ROLE_BADGE[role]
+
+
+  const handleLogout = async () => {
+    try {
+      await authService.logout()
+    } catch (err) {
+      console.error(err)
+    } finally {
+      clearAuth()
+      navigate('/login')
+    }
+  }
 
   return (
     <aside className="w-[224px] bg-dark-blue flex-shrink-0 flex flex-col sticky top-0 h-screen overflow-y-auto">
@@ -76,7 +91,7 @@ function Sidebar({ role = 'admin', user = {}, activePath = '', onLogout }) {
       </nav>
 
       <div
-        onClick={onLogout}
+        onClick={handleLogout}
         className="mx-3 mb-3 px-3 py-2 rounded-sm flex items-center justify-center gap-1.5
           text-white/80 cursor-pointer hover:bg-red-500/20 hover:text-red-300
           transition-all duration-150 border-t border-white/10 pt-3"
