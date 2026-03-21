@@ -12,7 +12,7 @@ const NAV_CONFIG = {
     { icon: RiInformationLine, label: 'Kelola Info', path: '/admin/pengumuman' },
   ],
   operator: [
-    { icon: RiDashboardLine, label: 'Dashboard', path: '/admin/dashboard' },
+    { icon: RiDashboardLine, label: 'Dashboard', path: '/operator/dashboard' },
     { icon: RiGroupLine, label: 'Data Pendaftar', path: '/admin/pendaftar' },
     { icon: RiTrophyLine, label: 'Hasil Seleksi', path: '/admin/seleksi' },
   ],
