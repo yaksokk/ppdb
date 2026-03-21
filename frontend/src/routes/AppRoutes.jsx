@@ -13,6 +13,7 @@ import HasilSeleksi from '../pages/admin/HasilSeleksi/HasilSeleksi'
 import KelolaInfo from '../pages/admin/KelolaInfo/KelolaInfo'
 import KelolaAkun from '../pages/admin/KelolaAkun/KelolaAkun'
 import Formulir from '../pages/pendaftar/Formulir/Formulir'
+import KriteriaSAW from '../pages/admin/KriteriaSaw/KriteriaSaw'
 import UploadDokumen from '../pages/pendaftar/UploadDokumen/UploadDokumen'
 import HasilSeleksiPendaftar from '../pages/pendaftar/HasilSeleksi/HasilSeleksi'
 import Beranda from '../pages/public/Beranda/Beranda'
@@ -42,6 +43,9 @@ function AppRoutes() {
       } />
       <Route path="/admin/operator" element={
         <PrivateRoute><RoleRoute allowedRoles={['admin']}><KelolaAkun /></RoleRoute></PrivateRoute>
+      } />
+      <Route path="/admin/kriteria" element={
+        <PrivateRoute><RoleRoute allowedRoles={['admin']}><KriteriaSAW /></RoleRoute></PrivateRoute>
       } />
 
       <Route path="/operator/dashboard" element={

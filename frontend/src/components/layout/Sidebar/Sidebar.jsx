@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom'
-import { RiSchoolLine, RiDashboardLine, RiGroupLine, RiFileList3Line, RiUploadCloud2Line, RiTrophyLine, RiInformationLine, RiLogoutBoxRLine, RiUserSettingsLine } from 'react-icons/ri'
+import { RiSchoolLine, RiDashboardLine, RiGroupLine, RiScales2Line, RiFileList3Line, RiUploadCloud2Line, RiTrophyLine, RiInformationLine, RiLogoutBoxRLine, RiUserSettingsLine } from 'react-icons/ri'
 import { Avatar } from '../../common'
 import authService from '../../../services/auth.service'
 import useAuthStore from '../../../store/authStore'
@@ -10,6 +10,7 @@ const NAV_CONFIG = {
     { icon: RiGroupLine, label: 'Data Pendaftar', path: '/admin/pendaftar' },
     { icon: RiUserSettingsLine, label: 'Kelola Akun', path: '/admin/operator' },
     { icon: RiInformationLine, label: 'Kelola Info', path: '/admin/pengumuman' },
+    { icon: RiScales2Line, label: 'Kriteria SAW', path: '/admin/kriteria' },
   ],
   operator: [
     { icon: RiDashboardLine, label: 'Dashboard', path: '/operator/dashboard' },
