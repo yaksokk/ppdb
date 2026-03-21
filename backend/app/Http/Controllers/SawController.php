@@ -25,7 +25,7 @@ class SawController extends Controller
 
         $pendaftaran = Pendaftaran::with('nilaiKriteria')
             ->where('jalur_id', $jalurId)
-            ->where('status', 'menunggu')
+            ->whereIn('status', ['menunggu', 'perbaikan', 'diterima', 'ditolak'])
             ->get();
 
         if ($pendaftaran->isEmpty()) {

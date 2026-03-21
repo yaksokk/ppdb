@@ -4,21 +4,26 @@ import { Badge, Button, Table, Tr, Td, EmptyState, Modal, Spinner } from '../../
 import AdminLayout from '../../../components/layout/AdminLayout/AdminLayout'
 import operatorService from '../../../services/operator.service'
 import useAuthStore from '../../../store/authStore'
+import sawService from '../../../services/saw.service'
 
 const STATUS_LABEL = {
   diterima: 'Diterima',
-  ditolak:  'Tidak Diterima',
+  ditolak: 'Tidak Diterima',
 }
 
 function HasilSeleksi() {
-  const { user }              = useAuthStore()
-  const [data, setData]       = useState([])
+  const { user } = useAuthStore()
+  const [data, setData] = useState([])
   const [loading, setLoading] = useState(true)
-  const [search, setSearch]   = useState('')
+  const [search, setSearch] = useState('')
   const [filterStatus, setFilterStatus] = useState('')
-  const [filterJalur, setFilterJalur]   = useState('')
-  const [ubahModal, setUbahModal]       = useState({ open: false, item: null })
-  const [saving, setSaving]             = useState(false)
+  const [filterJalur, setFilterJalur] = useState('')
+  const [ubahModal, setUbahModal] = useState({ open: false, item: null })
+  const [saving, setSaving] = useState(false)
+  const [jalurList, setJalurList] = useState([])
+  const [hitungModal, setHitungModal] = useState({ open: false, jalur_id: '', jalur_nama: '' })
+  const [hitungLoading, setHitungLoading] = useState(false)
+  const [hitungSuccess, setHitungSuccess] = useState('')
 
   const userObj = {
     name: user?.name || 'Operator',
@@ -33,7 +38,27 @@ function HasilSeleksi() {
       .finally(() => setLoading(false))
   }
 
-  useEffect(() => { fetchData() }, [filterStatus, filterJalur])
+  useEffect(() => {
+    import('../../../services/api').then(({ default: api }) => {
+      api.get('/jalur-masuk').then(res => setJalurList(res.data.jalur))
+    })
+    fetchData()
+  }, [filterStatus, filterJalur])
+
+  const handleHitungSAW = async () => {
+    setHitungLoading(true)
+    try {
+      await sawService.hitung({ jalur_id: hitungModal.jalur_id })
+      setHitungSuccess(`Ranking SAW jalur ${hitungModal.jalur_nama} berhasil dihitung!`)
+      setTimeout(() => setHitungSuccess(''), 3000)
+      fetchData()
+      setHitungModal({ open: false, jalur_id: '', jalur_nama: '' })
+    } catch (err) {
+      console.error(err)
+    } finally {
+      setHitungLoading(false)
+    }
+  }
 
   const handleUbah = async (newStatus) => {
     setSaving(true)
@@ -52,7 +77,7 @@ function HasilSeleksi() {
 
   const filtered = data.filter(d => {
     const matchSearch = d.nama?.toLowerCase().includes(search.toLowerCase()) ||
-                        d.nisn?.includes(search)
+      d.nisn?.includes(search)
     return matchSearch
   })
 
@@ -92,11 +117,24 @@ function HasilSeleksi() {
         </Button>
       </div>
 
+      {hitungSuccess && (
+        <div className="mb-3 text-[12px] text-success font-semibold">{hitungSuccess}</div>
+      )}
+
+      <div className="flex gap-2 mb-4 flex-wrap">
+        {jalurList.map(j => (
+          <Button key={j.id} size="sm" variant="ghost"
+            onClick={() => setHitungModal({ open: true, jalur_id: j.id, jalur_nama: j.nama })}>
+            Hitung SAW — {j.nama}
+          </Button>
+        ))}
+      </div>
+
       {loading ? (
         <div className="flex justify-center py-20"><Spinner size="lg" /></div>
       ) : (
         <>
-          <Table headers={['No.', 'Nama Siswa', 'NISN', 'Jenis Kelamin', 'Agama', 'Asal Sekolah', 'Jalur', 'Status', 'Aksi']}>
+          <Table headers={['No.', 'Ranking', 'Nama Siswa', 'NISN', 'Jenis Kelamin', 'Agama', 'Asal Sekolah', 'Jalur', 'Skor SAW', 'Status', 'Aksi']}>
             {filtered.length === 0 ? (
               <tr><td colSpan={9}>
                 <EmptyState icon={RiSearchLine} title="Data tidak ditemukan" description="Belum ada hasil seleksi." />
@@ -105,12 +143,18 @@ function HasilSeleksi() {
               filtered.map((d, i) => (
                 <Tr key={d.pendaftaran_id}>
                   <Td className="text-n500">{i + 1}</Td>
+                  <Td className="font-bold text-primary text-center">
+                    {d.ranking ? `#${d.ranking}` : '-'}
+                  </Td>
                   <Td className="font-semibold text-n800">{d.nama}</Td>
                   <Td className="text-n600">{d.data_diri?.nisn ?? '-'}</Td>
                   <Td>{d.data_diri?.jenis_kelamin ?? '-'}</Td>
                   <Td>{d.data_diri?.agama ?? '-'}</Td>
                   <Td>{d.data_diri?.asal_sekolah ?? '-'}</Td>
                   <Td className="font-semibold">{d.jalur?.nama ?? '-'}</Td>
+                  <Td className="text-center font-semibold">
+                    {d.skor_saw ? parseFloat(d.skor_saw).toFixed(4) : '-'}
+                  </Td>
                   <Td>
                     <div className="flex items-center gap-1">
                       {d.status_lulus
@@ -133,6 +177,7 @@ function HasilSeleksi() {
           <div className="mt-3">
             <p className="text-[12px] text-n500">{filtered.length} data ditampilkan</p>
           </div>
+
         </>
       )}
 
@@ -152,6 +197,19 @@ function HasilSeleksi() {
             </div>
           </>
         )}
+      </Modal>
+
+      <Modal isOpen={hitungModal.open} onClose={() => setHitungModal({ open: false, jalur_id: '', jalur_nama: '' })}
+        title="Hitung Ranking SAW">
+        <p className="text-[13px] text-n600 mb-4">
+          Hitung ranking SAW untuk jalur <strong>{hitungModal.jalur_nama}</strong>? Semua pendaftar jalur ini yang sudah diinput nilainya akan diranking ulang.
+        </p>
+        <div className="flex gap-2 justify-end">
+          <Button variant="ghost" onClick={() => setHitungModal({ open: false, jalur_id: '', jalur_nama: '' })}>Batal</Button>
+          <Button variant="primary" disabled={hitungLoading} onClick={handleHitungSAW}>
+            {hitungLoading ? <Spinner size="sm" color="white" /> : 'Ya, Hitung Sekarang'}
+          </Button>
+        </div>
       </Modal>
     </AdminLayout>
   )
