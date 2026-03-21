@@ -48,11 +48,11 @@ Route::middleware(['auth:sanctum', 'role:admin'])->prefix('admin')->group(functi
 });
 
 Route::middleware(['auth:sanctum', 'role:admin|operator'])->group(function () {
-    Route::get('/admin/dashboard', [AdminController::class, 'dashboard']);
-    Route::get('/admin/pendaftar', [AdminController::class, 'listPendaftar']);
-    Route::get('/admin/pendaftar/{id}', [AdminController::class, 'detailPendaftar']);
-    Route::put('/admin/pendaftar/{id}/status', [AdminController::class, 'updateStatus']);
-    Route::put('/admin/dokumen/{id}/verifikasi', [AdminController::class, 'verifikasiDokumen']);
+    Route::get('/admin/dashboard',                  [AdminController::class, 'dashboard']);
+    Route::get('/admin/pendaftar',                  [AdminController::class, 'listPendaftar']);
+    Route::get('/admin/pendaftar/{id}',             [AdminController::class, 'detailPendaftar']);
+    Route::put('/admin/pendaftar/{id}/status',      [AdminController::class, 'updateStatus']);
+    Route::put('/admin/dokumen/{id}/verifikasi',    [AdminController::class, 'verifikasiDokumen']);
 });
 
 Route::middleware(['auth:sanctum', 'role:operator'])->prefix('operator')->group(function () {

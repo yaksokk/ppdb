@@ -65,7 +65,7 @@ class OperatorController extends Controller
     public function hasilSeleksi(Request $request)
     {
         $query = Pendaftaran::with(['dataDiri', 'jalur', 'seleksi'])
-                            ->whereHas('seleksi');
+                            ->whereIn('status', ['diterima', 'ditolak']);
 
         if ($request->jalur_id) {
             $query->where('jalur_id', $request->jalur_id);
@@ -78,9 +78,18 @@ class OperatorController extends Controller
             });
         }
 
-        $hasil = $query->get()->sortBy(function ($p) {
-            return $p->seleksi->ranking ?? 999;
-        })->values();
+        $hasil = $query->get()->map(function ($p) {
+            return [
+                'pendaftaran_id' => $p->id,
+                'nama'           => $p->dataDiri->nama_lengkap ?? '-',
+                'nisn'           => $p->dataDiri->nisn ?? '-',
+                'data_diri'      => $p->dataDiri,
+                'jalur'          => $p->jalur,
+                'status_lulus'   => $p->seleksi?->status_lulus,
+                'skor_saw'       => $p->seleksi?->skor_saw,
+                'ranking'        => $p->seleksi?->ranking,
+            ];
+        });
 
         return response()->json(['hasil' => $hasil]);
     }

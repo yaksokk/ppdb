@@ -7,6 +7,7 @@ use App\Models\Pendaftaran;
 use App\Models\Dokumen;
 use App\Models\Setting;
 use App\Models\LogAktivitas;
+use App\Models\Seleksi;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 
@@ -89,7 +90,17 @@ class AdminController extends Controller
         $pendaftaran = Pendaftaran::findOrFail($id);
         $pendaftaran->update(['status' => $request->status]);
 
-        $this->log($request, 'update_status', 'pendaftaran', $id, 'Update status pendaftaran ke ' . $request->status);
+        if ($request->status === 'diterima' || $request->status === 'ditolak') {
+            Seleksi::updateOrCreate(
+                ['pendaftaran_id' => $id],
+                [
+                    'status_lulus' => $request->status === 'diterima',
+                    'input_by'     => $request->user()->id,
+                ]
+            );
+        }
+
+        $this->log($request, 'update_status', 'pendaftaran', $id, 'Update status ke ' . $request->status);
 
         return response()->json(['message' => 'Status berhasil diupdate']);
     }
