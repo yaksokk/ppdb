@@ -50,7 +50,9 @@ function Formulir() {
               jenis_kelamin: p.data_diri.jenis_kelamin || 'Laki-laki',
               agama: p.data_diri.agama || 'Kristen Protestan',
               tempat_lahir: p.data_diri.tempat_lahir || '',
-              tgl_lahir: p.data_diri.tgl_lahir || '',
+              tgl_lahir:     p.data_diri.tgl_lahir
+                         ? p.data_diri.tgl_lahir.substring(0, 10)
+                         : '',
               asal_sekolah: p.data_diri.asal_sekolah || '',
               tahun_lulus: p.data_diri.tahun_lulus || '',
               nama_ortu: p.data_orang_tua?.nama || '',
