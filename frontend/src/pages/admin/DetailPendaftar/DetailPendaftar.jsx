@@ -8,10 +8,10 @@ import adminService from '../../../services/admin.service'
 import useAuthStore from '../../../store/authStore'
 
 const STATUS_BANNER = {
-  menunggu:  { bg: 'bg-warning-light border-amber-200',  textColor: 'text-warning',    icon: RiTimeLine,  label: 'Menunggu Verifikasi Dokumen' },
-  perbaikan: { bg: 'bg-orange-50 border-orange-200',     textColor: 'text-orange-600', icon: RiAlertLine, label: 'Perlu Perbaikan Dokumen' },
-  diterima:  { bg: 'bg-success-light border-green-200',  textColor: 'text-success',    icon: RiCheckLine, label: 'Pendaftar Diterima' },
-  ditolak:   { bg: 'bg-danger-light border-red-200',     textColor: 'text-danger',     icon: RiCloseLine, label: 'Pendaftar Ditolak' },
+  menunggu: { bg: 'bg-warning-light border-amber-200', textColor: 'text-warning', icon: RiTimeLine, label: 'Menunggu Verifikasi Dokumen' },
+  perbaikan: { bg: 'bg-orange-50 border-orange-200', textColor: 'text-orange-600', icon: RiAlertLine, label: 'Perlu Perbaikan Dokumen' },
+  diterima: { bg: 'bg-success-light border-green-200', textColor: 'text-success', icon: RiCheckLine, label: 'Pendaftar Diterima' },
+  ditolak: { bg: 'bg-danger-light border-red-200', textColor: 'text-danger', icon: RiCloseLine, label: 'Pendaftar Ditolak' },
 }
 
 function InfoRow({ label, value }) {
@@ -24,14 +24,14 @@ function InfoRow({ label, value }) {
 }
 
 function DetailPendaftar() {
-  const navigate        = useNavigate()
-  const { id }          = useParams()
-  const { user }        = useAuthStore()
-  const [data, setData]               = useState(null)
-  const [loading, setLoading]         = useState(true)
+  const navigate = useNavigate()
+  const { id } = useParams()
+  const { user } = useAuthStore()
+  const [data, setData] = useState(null)
+  const [loading, setLoading] = useState(true)
   const [catatanModal, setCatatanModal] = useState({ open: false, id: null, catatan: '' })
-  const [konfirmasi, setKonfirmasi]   = useState({ open: false, tipe: null })
-  const [saving, setSaving]           = useState(false)
+  const [konfirmasi, setKonfirmasi] = useState({ open: false, tipe: null })
+  const [saving, setSaving] = useState(false)
 
   const userObj = {
     name: user?.name || 'Operator',
@@ -45,7 +45,12 @@ function DetailPendaftar() {
       .finally(() => setLoading(false))
   }
 
-  useEffect(() => { fetchData() }, [id])
+  useEffect(() => {
+    operatorService.getDetailPendaftar(id)
+      .then(res => setData(res.data.pendaftaran))
+      .catch(err => console.error(err))
+      .finally(() => setLoading(false))
+  }, [id])
 
   const handleVerifikasiDok = async (dokId, status, catatan = null) => {
     setSaving(true)
@@ -86,17 +91,17 @@ function DetailPendaftar() {
   )
 
   const bannerConfig = STATUS_BANNER[data.status] || STATUS_BANNER['menunggu']
-  const BannerIcon   = bannerConfig.icon
-  const dokumenWajib    = data.dokumen?.filter(d => ['akta','kk','ijazah','rapor'].includes(d.jenis)) || []
-  const dokumenPendukung = data.dokumen?.filter(d => !['akta','kk','ijazah','rapor'].includes(d.jenis)) || []
-  const totalDok    = data.dokumen?.length || 0
-  const diperiksa   = data.dokumen?.filter(d => d.status !== 'belum').length || 0
+  const BannerIcon = bannerConfig.icon
+  const dokumenWajib = data.dokumen?.filter(d => ['akta', 'kk', 'ijazah', 'rapor'].includes(d.jenis)) || []
+  const dokumenPendukung = data.dokumen?.filter(d => !['akta', 'kk', 'ijazah', 'rapor'].includes(d.jenis)) || []
+  const totalDok = data.dokumen?.length || 0
+  const diperiksa = data.dokumen?.filter(d => d.status !== 'belum').length || 0
 
   const renderDokItem = (dok) => (
     <div key={dok.id} className={`border rounded-md p-3 mb-2 last:mb-0 transition-all
-      ${dok.status === 'valid'     ? 'border-green-200 bg-success-light' : ''}
+      ${dok.status === 'valid' ? 'border-green-200 bg-success-light' : ''}
       ${dok.status === 'perbaikan' ? 'border-orange-200 bg-orange-50' : ''}
-      ${dok.status === 'belum'     ? 'border-n200 bg-white' : ''}
+      ${dok.status === 'belum' ? 'border-n200 bg-white' : ''}
     `}>
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2 flex-1 min-w-0">
@@ -120,9 +125,9 @@ function DetailPendaftar() {
             <RiCloseLine size={13} />
           </button>
           <span className={`text-[11px] font-semibold ml-1
-            ${dok.status === 'valid'     ? 'text-success' : ''}
+            ${dok.status === 'valid' ? 'text-success' : ''}
             ${dok.status === 'perbaikan' ? 'text-orange-500' : ''}
-            ${dok.status === 'belum'     ? 'text-n400' : ''}
+            ${dok.status === 'belum' ? 'text-n400' : ''}
           `}>
             {dok.status === 'valid' ? <span className="flex items-center gap-0.5"><RiCheckLine size={11} /> Valid</span> : ''}
             {dok.status === 'perbaikan' ? <span className="flex items-center gap-0.5"><RiAlertLine size={11} /> Perbaikan</span> : ''}
@@ -173,14 +178,14 @@ function DetailPendaftar() {
         <div className="flex flex-col gap-4">
           <div className="bg-white border border-n200 rounded-lg p-5 shadow-xs">
             <p className="text-[15px] font-bold font-poppins text-n800 mb-3">Data Siswa</p>
-            <InfoRow label="Nama Lengkap"     value={data.data_diri?.nama_lengkap} />
-            <InfoRow label="NISN"             value={data.data_diri?.nisn} />
-            <InfoRow label="Jenis Kelamin"    value={data.data_diri?.jenis_kelamin} />
+            <InfoRow label="Nama Lengkap" value={data.data_diri?.nama_lengkap} />
+            <InfoRow label="NISN" value={data.data_diri?.nisn} />
+            <InfoRow label="Jenis Kelamin" value={data.data_diri?.jenis_kelamin} />
             <InfoRow label="Tempat/Tgl Lahir" value={`${data.data_diri?.tempat_lahir}, ${data.data_diri?.tgl_lahir}`} />
-            <InfoRow label="Agama"            value={data.data_diri?.agama} />
-            <InfoRow label="Asal Sekolah"     value={data.data_diri?.asal_sekolah} />
-            <InfoRow label="Tahun Lulus"      value={data.data_diri?.tahun_lulus} />
-            <InfoRow label="Jalur Dipilih"    value={
+            <InfoRow label="Agama" value={data.data_diri?.agama} />
+            <InfoRow label="Asal Sekolah" value={data.data_diri?.asal_sekolah} />
+            <InfoRow label="Tahun Lulus" value={data.data_diri?.tahun_lulus} />
+            <InfoRow label="Jalur Dipilih" value={
               <span className="flex items-center gap-1 font-semibold">
                 <RiTrophyLine size={13} className="text-warning" /> {data.jalur?.nama}
               </span>
@@ -189,9 +194,9 @@ function DetailPendaftar() {
 
           <div className="bg-white border border-n200 rounded-lg p-5 shadow-xs">
             <p className="text-[15px] font-bold font-poppins text-n800 mb-3">Data Orang Tua / Wali</p>
-            <InfoRow label="Nama"        value={data.data_orang_tua?.nama} />
-            <InfoRow label="Hubungan"    value={data.data_orang_tua?.hubungan} />
-            <InfoRow label="Pekerjaan"   value={data.data_orang_tua?.pekerjaan} />
+            <InfoRow label="Nama" value={data.data_orang_tua?.nama} />
+            <InfoRow label="Hubungan" value={data.data_orang_tua?.hubungan} />
+            <InfoRow label="Pekerjaan" value={data.data_orang_tua?.pekerjaan} />
             <InfoRow label="No. Telepon" value={data.data_orang_tua?.no_telepon} />
           </div>
 
