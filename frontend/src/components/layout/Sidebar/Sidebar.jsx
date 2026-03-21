@@ -5,13 +5,13 @@ import authService from '../../../services/auth.service'
 import useAuthStore from '../../../store/authStore'
 
 const NAV_CONFIG = {
-admin: [
-  { icon: RiDashboardLine,   label: 'Dashboard',      path: '/admin/dashboard' },
-  { icon: RiGroupLine,       label: 'Data Pendaftar', path: '/admin/pendaftar' },
-  { icon: RiUserSettingsLine,label: 'Kelola Akun',    path: '/admin/operator' },
-  { icon: RiInformationLine, label: 'Kelola Info',    path: '/admin/pengumuman' },
-  { icon: RiSettings4Line,   label: 'Pengaturan',     path: '/admin/pengaturan' },
-],
+  admin: [
+    { icon: RiDashboardLine, label: 'Dashboard', path: '/admin/dashboard' },
+    { icon: RiGroupLine, label: 'Data Pendaftar', path: '/admin/pendaftar' },
+    { icon: RiUserSettingsLine, label: 'Kelola Akun', path: '/admin/operator' },
+    { icon: RiInformationLine, label: 'Kelola Info', path: '/admin/pengumuman' },
+    { icon: RiSettings4Line, label: 'Pengaturan', path: '/admin/pengaturan' },
+  ],
   operator: [
     { icon: RiDashboardLine, label: 'Dashboard', path: '/admin/dashboard' },
     { icon: RiGroupLine, label: 'Data Pendaftar', path: '/admin/pendaftar' },
@@ -21,6 +21,7 @@ admin: [
     { icon: RiDashboardLine, label: 'Dashboard', path: '/pendaftar/dashboard' },
     { icon: RiFileList3Line, label: 'Formulir', path: '/pendaftar/formulir' },
     { icon: RiUploadCloud2Line, label: 'Upload Dokumen', path: '/pendaftar/dokumen' },
+    { icon: RiTrophyLine, label: 'Hasil Seleksi', path: '/pendaftar/hasil' },
   ],
 }
 
