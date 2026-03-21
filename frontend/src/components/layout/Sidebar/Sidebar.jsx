@@ -1,16 +1,17 @@
 import { useNavigate } from 'react-router-dom'
-import { RiSchoolLine, RiDashboardLine, RiGroupLine, RiFileList3Line, RiUploadCloud2Line, RiTrophyLine, RiInformationLine, RiSettings4Line, RiLogoutBoxRLine } from 'react-icons/ri'
+import { RiSchoolLine, RiDashboardLine, RiGroupLine, RiFileList3Line, RiUploadCloud2Line, RiTrophyLine, RiInformationLine, RiSettings4Line, RiLogoutBoxRLine, RiUserSettingsLine } from 'react-icons/ri'
 import { Avatar } from '../../common'
 import authService from '../../../services/auth.service'
 import useAuthStore from '../../../store/authStore'
 
 const NAV_CONFIG = {
-  admin: [
-    { icon: RiDashboardLine, label: 'Dashboard', path: '/admin/dashboard' },
-    { icon: RiGroupLine, label: 'Data Pendaftar', path: '/admin/pendaftar' },
-    { icon: RiInformationLine, label: 'Kelola Info', path: '/admin/pengumuman' },
-    { icon: RiSettings4Line, label: 'Pengaturan', path: '/admin/pengaturan' },
-  ],
+admin: [
+  { icon: RiDashboardLine,   label: 'Dashboard',      path: '/admin/dashboard' },
+  { icon: RiGroupLine,       label: 'Data Pendaftar', path: '/admin/pendaftar' },
+  { icon: RiUserSettingsLine,label: 'Kelola Akun',    path: '/admin/operator' },
+  { icon: RiInformationLine, label: 'Kelola Info',    path: '/admin/pengumuman' },
+  { icon: RiSettings4Line,   label: 'Pengaturan',     path: '/admin/pengaturan' },
+],
   operator: [
     { icon: RiDashboardLine, label: 'Dashboard', path: '/admin/dashboard' },
     { icon: RiGroupLine, label: 'Data Pendaftar', path: '/admin/pendaftar' },
