@@ -5,34 +5,41 @@ import { Badge, Button, Table, Tr, Td, Pagination, EmptyState, Spinner } from '.
 import AdminLayout from '../../../components/layout/AdminLayout/AdminLayout'
 import operatorService from '../../../services/operator.service'
 import useAuthStore from '../../../store/authStore'
+import adminService from '../../../services/admin.service'
 
 const STATUS_LABEL = {
-  menunggu:  'Menunggu',
+  menunggu: 'Menunggu',
   perbaikan: 'Perbaikan',
-  diterima:  'Diterima',
-  ditolak:   'Ditolak',
-  draft:     'Belum Mengisi',
+  diterima: 'Diterima',
+  ditolak: 'Ditolak',
+  draft: 'Belum Mengisi',
 }
 
 function DataPendaftar() {
-  const navigate        = useNavigate()
-  const { user }        = useAuthStore()
-  const [data, setData]               = useState([])
-  const [meta, setMeta]               = useState({})
-  const [loading, setLoading]         = useState(true)
-  const [search, setSearch]           = useState('')
+  const navigate = useNavigate()
+  const { user } = useAuthStore()
+  const [data, setData] = useState([])
+  const [meta, setMeta] = useState({})
+  const [loading, setLoading] = useState(true)
+  const [search, setSearch] = useState('')
   const [filterStatus, setFilterStatus] = useState('')
-  const [filterJalur, setFilterJalur]   = useState('')
-  const [page, setPage]               = useState(1)
+  const [filterJalur, setFilterJalur] = useState('')
+  const [page, setPage] = useState(1)
 
   const userObj = {
     name: user?.name || 'Operator',
-    avatarStyle: { background: 'rgba(22,163,74,.2)', color: '#86EFAC' },
+    avatarStyle: user?.role === 'admin'
+      ? { background: 'rgba(217,119,6,.2)', color: '#FCD34D' }
+      : { background: 'rgba(22,163,74,.2)', color: '#86EFAC' },
   }
 
   const fetchData = (params = {}) => {
     setLoading(true)
-    operatorService.getListPendaftar({ search, status: filterStatus, page, ...params })
+    const service = user?.role === 'admin'
+      ? adminService.getListPendaftar({ search, status: filterStatus, page, ...params })
+      : operatorService.getListPendaftar({ search, status: filterStatus, page, ...params })
+
+    service
       .then(res => {
         setData(res.data.data)
         setMeta(res.data)
@@ -49,7 +56,7 @@ function DataPendaftar() {
   }
 
   return (
-    <AdminLayout role="operator" user={userObj} activePath="/admin/pendaftar">
+    <AdminLayout role={user?.role || 'operator'} user={userObj} activePath="/admin/pendaftar">
       <div className="mb-5">
         <h1 className="text-[19px] font-extrabold font-poppins text-n800">Data Pendaftar</h1>
       </div>
