@@ -5,6 +5,7 @@ import { Badge, Button, Modal, Spinner } from '../../../components/common'
 import AdminLayout from '../../../components/layout/AdminLayout/AdminLayout'
 import operatorService from '../../../services/operator.service'
 import adminService from '../../../services/admin.service'
+import kriteriaService from '../../../services/kriteria.service'
 import useAuthStore from '../../../store/authStore'
 
 const STATUS_BANNER = {
@@ -32,6 +33,10 @@ function DetailPendaftar() {
   const [catatanModal, setCatatanModal] = useState({ open: false, id: null, catatan: '' })
   const [konfirmasi, setKonfirmasi] = useState({ open: false, tipe: null })
   const [saving, setSaving] = useState(false)
+  const [kriteriaList, setKriteriaList] = useState([])
+  const [nilaiForm, setNilaiForm] = useState({})
+  const [savingNilai, setSavingNilai] = useState(false)
+  const [nilaiSuccess, setNilaiSuccess] = useState('')
 
   const userObj = {
     name: user?.name || 'Operator',
@@ -47,10 +52,43 @@ function DetailPendaftar() {
 
   useEffect(() => {
     operatorService.getDetailPendaftar(id)
-      .then(res => setData(res.data.pendaftaran))
+      .then(res => {
+        const p = res.data.pendaftaran
+        setData(p)
+        if (p?.jalur_id) {
+          kriteriaService.getByJalur(p.jalur_id)
+            .then(kr => {
+              setKriteriaList(kr.data.kriteria)
+              const initNilai = {}
+              kr.data.kriteria.forEach(k => {
+                const existing = p.nilai_kriteria?.find(n => n.kriteria_id === k.id)
+                initNilai[k.id] = existing ? existing.nilai : ''
+              })
+              setNilaiForm(initNilai)
+            })
+            .catch(() => { })
+        }
+      })
       .catch(err => console.error(err))
       .finally(() => setLoading(false))
   }, [id])
+
+  const handleSimpanNilai = async () => {
+    setSavingNilai(true)
+    try {
+      const nilai = Object.keys(nilaiForm).map(kriteriaId => ({
+        kriteria_id: parseInt(kriteriaId),
+        nilai: parseFloat(nilaiForm[kriteriaId]),
+      }))
+      await operatorService.inputNilai(id, { nilai })
+      setNilaiSuccess('Nilai berhasil disimpan!')
+      setTimeout(() => setNilaiSuccess(''), 3000)
+    } catch (err) {
+      console.error(err)
+    } finally {
+      setSavingNilai(false)
+    }
+  }
 
   const handleVerifikasiDok = async (dokId, status, catatan = null) => {
     setSaving(true)
@@ -199,6 +237,41 @@ function DetailPendaftar() {
             <InfoRow label="Pekerjaan" value={data.data_orang_tua?.pekerjaan} />
             <InfoRow label="No. Telepon" value={data.data_orang_tua?.no_telepon} />
           </div>
+
+          {kriteriaList.length > 0 && (
+            <div className="bg-white border border-n200 rounded-lg p-5 shadow-xs">
+              <p className="text-[15px] font-bold font-poppins text-n800 mb-3">
+                Input Nilai Kriteria SAW
+              </p>
+              {nilaiSuccess && (
+                <div className="mb-3 text-[12px] text-success font-semibold">{nilaiSuccess}</div>
+              )}
+              <div className="flex flex-col gap-3">
+                {kriteriaList.map(k => (
+                  <div key={k.id} className="flex items-center gap-3">
+                    <div className="flex-1">
+                      <p className="text-[12px] font-semibold text-n700">{k.nama}</p>
+                      <p className="text-[11px] text-n400">{k.deskripsi} · {k.jenis === 'benefit' ? 'Benefit' : 'Cost'} · Bobot {k.bobot}%</p>
+                    </div>
+                    <input
+                      type="number"
+                      min="0"
+                      max="100"
+                      placeholder="0-100"
+                      value={nilaiForm[k.id] || ''}
+                      onChange={e => setNilaiForm({ ...nilaiForm, [k.id]: e.target.value })}
+                      className="w-24 px-3 py-1.5 text-[13px] border-[1.5px] border-n200 rounded-sm outline-none focus:border-primary text-center"
+                    />
+                  </div>
+                ))}
+              </div>
+              <div className="flex justify-end mt-4">
+                <Button size="sm" onClick={handleSimpanNilai} disabled={savingNilai}>
+                  {savingNilai ? <Spinner size="sm" color="white" /> : 'Simpan Nilai'}
+                </Button>
+              </div>
+            </div>
+          )}
 
           <div className="bg-white border border-n200 rounded-lg p-5 shadow-xs">
             <p className="text-[15px] font-bold font-poppins text-n800 mb-3">Keputusan Akhir</p>
