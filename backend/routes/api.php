@@ -38,26 +38,21 @@ Route::middleware(['auth:sanctum', 'role:pendaftar'])->prefix('pendaftar')->grou
 });
 
 Route::middleware(['auth:sanctum', 'role:admin'])->prefix('admin')->group(function () {
-    Route::get('/dashboard',               [AdminController::class, 'dashboard']);
-    Route::get('/pendaftar',               [AdminController::class, 'listPendaftar']);
-    Route::get('/pendaftar/{id}',          [AdminController::class, 'detailPendaftar']);
-    Route::put('/pendaftar/{id}/status',   [AdminController::class, 'updateStatus']);
-    Route::put('/dokumen/{id}/verifikasi', [AdminController::class, 'verifikasiDokumen']);
-    Route::get('/operator',                [AdminController::class, 'listOperator']);
-    Route::post('/operator',               [AdminController::class, 'tambahOperator']);
-    Route::put('/operator/{id}',           [AdminController::class, 'updateOperator']);
-    Route::delete('/operator/{id}',        [AdminController::class, 'hapusOperator']);
-    Route::get('/setting',                 [AdminController::class, 'getSetting']);
-    Route::put('/setting',                 [AdminController::class, 'updateSetting']);
-    Route::get('/log',                     [AdminController::class, 'logAktivitas']);
+    Route::get('/operator',          [AdminController::class, 'listOperator']);
+    Route::post('/operator',         [AdminController::class, 'tambahOperator']);
+    Route::put('/operator/{id}',     [AdminController::class, 'updateOperator']);
+    Route::delete('/operator/{id}',  [AdminController::class, 'hapusOperator']);
+    Route::get('/setting',           [AdminController::class, 'getSetting']);
+    Route::put('/setting',           [AdminController::class, 'updateSetting']);
+    Route::get('/log',               [AdminController::class, 'logAktivitas']);
 });
 
-Route::middleware(['auth:sanctum', 'role:operator'])->prefix('operator')->group(function () {
-    Route::get('/pendaftar',             [OperatorController::class, 'listPendaftar']);
-    Route::get('/pendaftar/{id}',        [OperatorController::class, 'detailPendaftar']);
-    Route::post('/pendaftar/{id}/nilai', [OperatorController::class, 'inputNilai']);
-    Route::get('/hasil-seleksi',         [OperatorController::class, 'hasilSeleksi']);
-    Route::put('/hasil-seleksi/{id}',    [OperatorController::class, 'updateHasil']);
+Route::middleware(['auth:sanctum', 'role:admin|operator'])->group(function () {
+    Route::get('/admin/dashboard', [AdminController::class, 'dashboard']);
+    Route::get('/admin/pendaftar', [AdminController::class, 'listPendaftar']);
+    Route::get('/admin/pendaftar/{id}', [AdminController::class, 'detailPendaftar']);
+    Route::put('/admin/pendaftar/{id}/status', [AdminController::class, 'updateStatus']);
+    Route::put('/admin/dokumen/{id}/verifikasi', [AdminController::class, 'verifikasiDokumen']);
 });
 
 Route::middleware(['auth:sanctum', 'role:operator'])->prefix('saw')->group(function () {

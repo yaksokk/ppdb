@@ -14,11 +14,12 @@ class AdminController extends Controller
 {
     public function dashboard(Request $request)
     {
-        $total      = Pendaftaran::count();
-        $diterima   = Pendaftaran::where('status', 'diterima')->count();
-        $menunggu   = Pendaftaran::where('status', 'menunggu')->count();
-        $ditolak    = Pendaftaran::where('status', 'ditolak')->count();
-        $operator   = User::role('operator')->count();
+        $total     = Pendaftaran::count();
+        $diterima  = Pendaftaran::where('status', 'diterima')->count();
+        $menunggu  = Pendaftaran::where('status', 'menunggu')->count();
+        $perbaikan = Pendaftaran::where('status', 'perbaikan')->count();
+        $ditolak   = Pendaftaran::where('status', 'ditolak')->count();
+        $operator  = User::role('operator')->count();
 
         $perJalur = Pendaftaran::with('jalur')
             ->selectRaw('jalur_id, count(*) as total')
@@ -32,17 +33,18 @@ class AdminController extends Controller
         $statusVerifikasi = [
             ['name' => 'Terverifikasi',   'value' => $diterima],
             ['name' => 'Belum Periksa',   'value' => $menunggu],
-            ['name' => 'Perlu Perbaikan', 'value' => Pendaftaran::where('status', 'perbaikan')->count()],
+            ['name' => 'Perlu Perbaikan', 'value' => $perbaikan],
         ];
 
         return response()->json([
-            'total'            => $total,
-            'diterima'         => $diterima,
-            'menunggu'         => $menunggu,
-            'ditolak'          => $ditolak,
-            'operator'         => $operator,
-            'per_jalur'        => $perJalur,
-            'status_verifikasi'=> $statusVerifikasi,
+            'total'             => $total,
+            'diterima'          => $diterima,
+            'menunggu'          => $menunggu,
+            'perbaikan'         => $perbaikan,
+            'ditolak'           => $ditolak,
+            'operator'          => $operator,
+            'per_jalur'         => $perJalur,
+            'status_verifikasi' => $statusVerifikasi,
         ]);
     }
 
