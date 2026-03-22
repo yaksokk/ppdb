@@ -5,6 +5,8 @@ import AdminLayout from '../../../components/layout/AdminLayout/AdminLayout'
 import operatorService from '../../../services/operator.service'
 import useAuthStore from '../../../store/authStore'
 import sawService from '../../../services/saw.service'
+import * as XLSX from 'xlsx'
+import { saveAs } from 'file-saver'
 
 const STATUS_LABEL = {
   diterima: 'Diterima',
@@ -75,6 +77,28 @@ function HasilSeleksi() {
     }
   }
 
+  const handleExport = () => {
+    const exportData = filtered.map((d, i) => ({
+      'No': i + 1,
+      'Ranking': d.ranking ? `#${d.ranking}` : '-',
+      'Nama Siswa': d.nama,
+      'NISN': d.data_diri?.nisn ?? '-',
+      'Jenis Kelamin': d.data_diri?.jenis_kelamin ?? '-',
+      'Agama': d.data_diri?.agama ?? '-',
+      'Asal Sekolah': d.data_diri?.asal_sekolah ?? '-',
+      'Jalur': d.jalur?.nama ?? '-',
+      'Skor SAW': d.skor_saw ? parseFloat(d.skor_saw).toFixed(4) : '-',
+      'Status': d.status_lulus ? 'Diterima' : 'Tidak Diterima',
+    }))
+
+    const ws = XLSX.utils.json_to_sheet(exportData)
+    const wb = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(wb, ws, 'Hasil Seleksi')
+    const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' })
+    const blob = new Blob([excelBuffer], { type: 'application/octet-stream' })
+    saveAs(blob, `Hasil_Seleksi_PPDB_${new Date().toLocaleDateString('id-ID')}.xlsx`)
+  }
+
   const filtered = data.filter(d => {
     const matchSearch = d.nama?.toLowerCase().includes(search.toLowerCase()) ||
       d.nisn?.includes(search)
@@ -112,7 +136,7 @@ function HasilSeleksi() {
           <option value="4">Mutasi</option>
         </select>
 
-        <Button onClick={() => alert('Export')} className="ml-auto">
+        <Button onClick={handleExport} className="ml-auto">
           <RiDownload2Line size={14} /> Export
         </Button>
       </div>
