@@ -10,8 +10,8 @@ function LoginAdmin() {
   const navigate = useNavigate()
   const { setAuth } = useAuthStore()
   const [showPassword, setShowPassword] = useState(false)
-  const [role, setRole]     = useState('admin')
-  const [form, setForm]     = useState({ email: '', password: '' })
+  const [role, setRole] = useState('admin')
+  const [form, setForm] = useState({ email: '', password: '' })
   const [errors, setErrors] = useState({})
   const [loading, setLoading] = useState(false)
 
@@ -23,7 +23,7 @@ function LoginAdmin() {
   const handleSubmit = async (e) => {
     e.preventDefault()
     const errs = {}
-    if (!form.email)    errs.email    = 'Email wajib diisi'
+    if (!form.email) errs.email = 'Email wajib diisi'
     if (!form.password) errs.password = 'Kata sandi wajib diisi'
     if (Object.keys(errs).length) return setErrors(errs)
 
@@ -34,6 +34,10 @@ function LoginAdmin() {
 
       if (user.role !== 'admin' && user.role !== 'operator') {
         setErrors({ email: 'Akun ini bukan admin atau operator' })
+        return
+      }
+      if (user.role !== role) {
+        setErrors({ email: `Akun ini bukan ${role === 'admin' ? 'Admin' : 'Operator'}. Silakan pilih tab yang sesuai.` })
         return
       }
 
