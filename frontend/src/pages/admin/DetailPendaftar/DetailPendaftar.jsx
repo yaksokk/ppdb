@@ -219,7 +219,12 @@ function DetailPendaftar() {
             <InfoRow label="Nama Lengkap" value={data.data_diri?.nama_lengkap} />
             <InfoRow label="NISN" value={data.data_diri?.nisn} />
             <InfoRow label="Jenis Kelamin" value={data.data_diri?.jenis_kelamin} />
-            <InfoRow label="Tempat/Tgl Lahir" value={`${data.data_diri?.tempat_lahir}, ${data.data_diri?.tgl_lahir}`} />
+            <InfoRow label="Tempat/Tgl Lahir" value={`${data.data_diri?.tempat_lahir}, ${data.data_diri?.tgl_lahir
+                ? new Date(data.data_diri.tgl_lahir).toLocaleDateString('id-ID', {
+                  day: 'numeric', month: 'long', year: 'numeric'
+                })
+                : '-'
+              }`} />
             <InfoRow label="Agama" value={data.data_diri?.agama} />
             <InfoRow label="Asal Sekolah" value={data.data_diri?.asal_sekolah} />
             <InfoRow label="Tahun Lulus" value={data.data_diri?.tahun_lulus} />
