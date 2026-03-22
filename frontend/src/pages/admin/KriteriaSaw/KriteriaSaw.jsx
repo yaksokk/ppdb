@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { RiAddLine, RiPencilLine, RiDeleteBinLine } from 'react-icons/ri'
 import { Button, Table, Tr, Td, Modal, EmptyState, Spinner, Alert, Badge } from '../../../components/common'
 import { FormInput, FormSelect } from '../../../components/form'
-import AdminLayout from '../../../components/layout/AdminLayout/AdminLayout'
+import DashboardLayout from '../../../components/layout/DashboardLayout/DashboardLayout'
 import kriteriaService from '../../../services/kriteria.service'
 import useAuthStore from '../../../store/authStore'
 
@@ -131,13 +131,13 @@ function KriteriaSAW() {
     }
 
     if (loading) return (
-        <AdminLayout role="admin" user={userObj} activePath="/admin/kriteria">
+        <DashboardLayout role="admin" user={userObj} activePath="/admin/kriteria">
             <div className="flex justify-center py-20"><Spinner size="lg" /></div>
-        </AdminLayout>
+        </DashboardLayout>
     )
 
     return (
-        <AdminLayout role="admin" user={userObj} activePath="/admin/kriteria">
+        <DashboardLayout role="admin" user={userObj} activePath="/admin/kriteria">
             <div className="flex items-center justify-between mb-5">
                 <h1 className="text-[19px] font-extrabold font-poppins text-n800">Kriteria SAW</h1>
                 <Button onClick={handleTambah}>
@@ -250,7 +250,7 @@ function KriteriaSAW() {
                     </Button>
                 </div>
             </Modal>
-        </AdminLayout>
+        </DashboardLayout>
     )
 }
 

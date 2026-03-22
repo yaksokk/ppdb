@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { RiInformationLine, RiAlertLine, RiCheckLine, RiFileTextLine, RiHomeSmileLine, RiTrophyLine, RiBankCardLine } from 'react-icons/ri'
 import { Button, Spinner, Alert } from '../../../components/common'
-import AdminLayout from '../../../components/layout/AdminLayout/AdminLayout'
+import DashboardLayout from '../../../components/layout/DashboardLayout/DashboardLayout'
 import pendaftarService from '../../../services/pendaftar.service'
 import useAuthStore from '../../../store/authStore'
 
@@ -128,13 +128,13 @@ function UploadDokumen() {
   const userObj = { name: user?.name || 'Pendaftar', avatarStyle: { background: 'rgba(37,99,235,.25)', color: '#93C5FD' } }
 
   if (loadingInit) return (
-    <AdminLayout role="pendaftar" user={userObj} activePath="/pendaftar/dokumen">
+    <DashboardLayout role="pendaftar" user={userObj} activePath="/pendaftar/dokumen">
       <div className="flex justify-center py-20"><Spinner size="lg" /></div>
-    </AdminLayout>
+    </DashboardLayout>
   )
 
   return (
-    <AdminLayout role="pendaftar" user={userObj} activePath="/pendaftar/dokumen">
+    <DashboardLayout role="pendaftar" user={userObj} activePath="/pendaftar/dokumen">
       <div className="mb-4">
         <h1 className="text-[19px] font-extrabold font-poppins text-n800">Upload Dokumen</h1>
       </div>
@@ -180,7 +180,7 @@ function UploadDokumen() {
           {loading ? <><Spinner size="sm" color="white" /> Memproses...</> : <><RiCheckLine size={14} /> Kirim Dokumen</>}
         </Button>
       </div>
-    </AdminLayout>
+    </DashboardLayout>
   )
 }
 

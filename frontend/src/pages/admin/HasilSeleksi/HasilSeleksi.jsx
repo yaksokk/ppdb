@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { RiSearchLine, RiDownload2Line, RiCheckLine, RiCloseLine } from 'react-icons/ri'
 import { Badge, Button, Table, Tr, Td, EmptyState, Modal, Spinner } from '../../../components/common'
-import AdminLayout from '../../../components/layout/AdminLayout/AdminLayout'
+import DashboardLayout from '../../../components/layout/DashboardLayout/DashboardLayout'
 import operatorService from '../../../services/operator.service'
 import useAuthStore from '../../../store/authStore'
 import sawService from '../../../services/saw.service'
@@ -106,7 +106,7 @@ function HasilSeleksi() {
   })
 
   return (
-    <AdminLayout role="operator" user={userObj} activePath="/admin/seleksi">
+    <DashboardLayout role="operator" user={userObj} activePath="/admin/seleksi">
       <div className="mb-5">
         <h1 className="text-[19px] font-extrabold font-poppins text-n800">Hasil Seleksi</h1>
       </div>
@@ -235,7 +235,7 @@ function HasilSeleksi() {
           </Button>
         </div>
       </Modal>
-    </AdminLayout>
+    </DashboardLayout>
   )
 }
 

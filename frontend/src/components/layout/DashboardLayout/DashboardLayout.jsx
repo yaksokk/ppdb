@@ -1,7 +1,7 @@
 import Sidebar from '../Sidebar/Sidebar'
 import Topbar from '../Topbar/Topbar'
 
-function AdminLayout({ role, user, activePath, pageTitle, children }) {
+function DashboardLayout({ role, user, activePath, pageTitle, children }) {
   return (
     <div className="flex min-h-screen bg-n100">
       <Sidebar role={role} user={user} activePath={activePath} />
@@ -15,4 +15,4 @@ function AdminLayout({ role, user, activePath, pageTitle, children }) {
   )
 }
 
-export default AdminLayout
+export default DashboardLayout

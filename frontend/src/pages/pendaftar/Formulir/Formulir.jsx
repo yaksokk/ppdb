@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { RiHomeSmileLine, RiTrophyLine, RiHeartLine, RiExchangeLine } from 'react-icons/ri'
 import { Button, Spinner, Alert } from '../../../components/common'
 import { FormInput, FormSelect, FormTextarea } from '../../../components/form'
-import AdminLayout from '../../../components/layout/AdminLayout/AdminLayout'
+import DashboardLayout from '../../../components/layout/DashboardLayout/DashboardLayout'
 import pendaftarService from '../../../services/pendaftar.service'
 import useAuthStore from '../../../store/authStore'
 
@@ -117,13 +117,13 @@ function Formulir() {
   const userObj = { name: user?.name || 'Pendaftar', avatarStyle: user_avatarStyle }
 
   if (loadingInit) return (
-    <AdminLayout role="pendaftar" user={userObj} activePath="/pendaftar/formulir">
+    <DashboardLayout role="pendaftar" user={userObj} activePath="/pendaftar/formulir">
       <div className="flex justify-center py-20"><Spinner size="lg" /></div>
-    </AdminLayout>
+    </DashboardLayout>
   )
 
   return (
-    <AdminLayout role="pendaftar" user={userObj} activePath="/pendaftar/formulir">
+    <DashboardLayout role="pendaftar" user={userObj} activePath="/pendaftar/formulir">
       <div className="mb-5">
         <h1 className="text-[19px] font-extrabold font-poppins text-n800">Formulir Pendaftaran</h1>
       </div>
@@ -207,7 +207,7 @@ function Formulir() {
           {loading ? <><Spinner size="sm" color="white" /> Menyimpan...</> : 'Simpan & Lanjutkan →'}
         </Button>
       </div>
-    </AdminLayout>
+    </DashboardLayout>
   )
 }
 

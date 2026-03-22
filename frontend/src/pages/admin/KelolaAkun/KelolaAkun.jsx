@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { RiPencilLine, RiDeleteBinLine, RiAddLine } from 'react-icons/ri'
 import { Button, Table, Tr, Td, Modal, EmptyState, Spinner, Alert } from '../../../components/common'
 import { FormInput } from '../../../components/form'
-import AdminLayout from '../../../components/layout/AdminLayout/AdminLayout'
+import DashboardLayout from '../../../components/layout/DashboardLayout/DashboardLayout'
 import adminService from '../../../services/admin.service'
 import useAuthStore from '../../../store/authStore'
 
@@ -98,7 +98,7 @@ function KelolaAkun() {
   }
 
   return (
-    <AdminLayout role="admin" user={userObj} activePath="/admin/operator">
+    <DashboardLayout role="admin" user={userObj} activePath="/admin/operator">
       <div className="mb-5">
         <h1 className="text-[19px] font-extrabold font-poppins text-n800">Kelola Akun</h1>
       </div>
@@ -189,7 +189,7 @@ function KelolaAkun() {
           </Button>
         </div>
       </Modal>
-    </AdminLayout>
+    </DashboardLayout>
   )
 }
 

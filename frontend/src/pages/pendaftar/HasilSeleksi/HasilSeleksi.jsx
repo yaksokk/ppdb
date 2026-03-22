@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { RiPrinterLine, RiDownloadLine, RiCheckLine, RiCloseLine, RiTrophyLine } from 'react-icons/ri'
 import { RiEmotionHappyLine, RiEmotionUnhappyLine } from 'react-icons/ri'
 import { Badge, Button, Spinner } from '../../../components/common'
-import AdminLayout from '../../../components/layout/AdminLayout/AdminLayout'
+import DashboardLayout from '../../../components/layout/DashboardLayout/DashboardLayout'
 import pendaftarService from '../../../services/pendaftar.service'
 import useAuthStore from '../../../store/authStore'
 import jsPDF from 'jspdf'
@@ -34,17 +34,17 @@ function HasilSeleksiPendaftar() {
   }, [])
 
   if (loading) return (
-    <AdminLayout role="pendaftar" user={userObj} activePath="/pendaftar/hasil">
+    <DashboardLayout role="pendaftar" user={userObj} activePath="/pendaftar/hasil">
       <div className="flex justify-center py-20"><Spinner size="lg" /></div>
-    </AdminLayout>
+    </DashboardLayout>
   )
 
   if (!pendaftaran) return (
-    <AdminLayout role="pendaftar" user={userObj} activePath="/pendaftar/hasil">
+    <DashboardLayout role="pendaftar" user={userObj} activePath="/pendaftar/hasil">
       <div className="flex justify-center py-20">
         <p className="text-[13px] text-n500">Hasil seleksi belum tersedia.</p>
       </div>
-    </AdminLayout>
+    </DashboardLayout>
   )
 
   const diterima = pendaftaran.status === 'diterima'
@@ -117,7 +117,7 @@ function HasilSeleksiPendaftar() {
   }
 
   return (
-    <AdminLayout role="pendaftar" user={userObj} activePath="/pendaftar/hasil">
+    <DashboardLayout role="pendaftar" user={userObj} activePath="/pendaftar/hasil">
       <div className="mb-5">
         <h1 className="text-[19px] font-extrabold font-poppins text-n800">Hasil Seleksi</h1>
       </div>
@@ -200,7 +200,7 @@ function HasilSeleksiPendaftar() {
           </div>
         )}
       </div>
-    </AdminLayout>
+    </DashboardLayout>
   )
 }
 

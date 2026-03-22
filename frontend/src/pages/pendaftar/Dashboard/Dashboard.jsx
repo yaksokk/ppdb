@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { RiFileList3Line, RiUploadCloud2Line, RiCheckLine } from 'react-icons/ri'
 import { Badge, Button, Spinner } from '../../../components/common'
-import AdminLayout from '../../../components/layout/AdminLayout/AdminLayout'
+import DashboardLayout from '../../../components/layout/DashboardLayout/DashboardLayout'
 import pendaftarService from '../../../services/pendaftar.service'
 import useAuthStore from '../../../store/authStore'
 
@@ -92,15 +92,15 @@ function DashboardPendaftar() {
   const currentStep  = getCurrentStep(status)
 
   if (loading) return (
-    <AdminLayout role="pendaftar" user={userObj} activePath="/pendaftar/dashboard">
+    <DashboardLayout role="pendaftar" user={userObj} activePath="/pendaftar/dashboard">
       <div className="flex justify-center py-20">
         <Spinner size="lg" />
       </div>
-    </AdminLayout>
+    </DashboardLayout>
   )
 
   return (
-    <AdminLayout role="pendaftar" user={userObj} activePath="/pendaftar/dashboard">
+    <DashboardLayout role="pendaftar" user={userObj} activePath="/pendaftar/dashboard">
       <div className="mb-5">
         <h1 className="text-[19px] font-extrabold font-poppins text-n800">Dashboard</h1>
       </div>
@@ -165,7 +165,7 @@ function DashboardPendaftar() {
           </div>
         </div>
       )}
-    </AdminLayout>
+    </DashboardLayout>
   )
 }
 

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { RiInformationLine } from 'react-icons/ri'
 import { Button, Spinner, Alert } from '../../../components/common'
 import { FormInput } from '../../../components/form'
-import AdminLayout from '../../../components/layout/AdminLayout/AdminLayout'
+import DashboardLayout from '../../../components/layout/DashboardLayout/DashboardLayout'
 import adminService from '../../../services/admin.service'
 import useAuthStore from '../../../store/authStore'
 
@@ -63,13 +63,13 @@ function Pengaturan() {
   }
 
   if (loading) return (
-    <AdminLayout role="admin" user={userObj} activePath="/admin/pengaturan">
+    <DashboardLayout role="admin" user={userObj} activePath="/admin/pengaturan">
       <div className="flex justify-center py-20"><Spinner size="lg" /></div>
-    </AdminLayout>
+    </DashboardLayout>
   )
 
   return (
-    <AdminLayout role="admin" user={userObj} activePath="/admin/pengaturan">
+    <DashboardLayout role="admin" user={userObj} activePath="/admin/pengaturan">
       <div className="mb-5">
         <h1 className="text-[19px] font-extrabold font-poppins text-n800">Pengaturan</h1>
       </div>
@@ -125,7 +125,7 @@ function Pengaturan() {
           </div>
         </div>
       </div>
-    </AdminLayout>
+    </DashboardLayout>
   )
 }
 

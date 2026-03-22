@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { RiArrowLeftLine, RiCheckLine, RiCloseLine, RiTimeLine, RiFileTextLine, RiTrophyLine, RiAlertLine } from 'react-icons/ri'
 import { Badge, Button, Modal, Spinner } from '../../../components/common'
-import AdminLayout from '../../../components/layout/AdminLayout/AdminLayout'
+import DashboardLayout from '../../../components/layout/DashboardLayout/DashboardLayout'
 import operatorService from '../../../services/operator.service'
 import adminService from '../../../services/admin.service'
 import kriteriaService from '../../../services/kriteria.service'
@@ -117,15 +117,15 @@ function DetailPendaftar() {
   }
 
   if (loading) return (
-    <AdminLayout role="operator" user={userObj} activePath="/admin/pendaftar">
+    <DashboardLayout role="operator" user={userObj} activePath="/admin/pendaftar">
       <div className="flex justify-center py-20"><Spinner size="lg" /></div>
-    </AdminLayout>
+    </DashboardLayout>
   )
 
   if (!data) return (
-    <AdminLayout role="operator" user={userObj} activePath="/admin/pendaftar">
+    <DashboardLayout role="operator" user={userObj} activePath="/admin/pendaftar">
       <p className="text-n500 text-[13px]">Data tidak ditemukan.</p>
-    </AdminLayout>
+    </DashboardLayout>
   )
 
   const bannerConfig = STATUS_BANNER[data.status] || STATUS_BANNER['menunggu']
@@ -183,7 +183,7 @@ function DetailPendaftar() {
   )
 
   return (
-    <AdminLayout role="operator" user={userObj} activePath="/admin/pendaftar">
+    <DashboardLayout role="operator" user={userObj} activePath="/admin/pendaftar">
       <div className="flex items-start justify-between mb-4">
         <div>
           <h1 className="text-[19px] font-extrabold font-poppins text-n800">Detail & Verifikasi</h1>
@@ -338,7 +338,7 @@ function DetailPendaftar() {
           </Button>
         </div>
       </Modal>
-    </AdminLayout>
+    </DashboardLayout>
   )
 }
 

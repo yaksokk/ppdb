@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { RiGroupLine, RiTimeLine, RiAlertLine, RiCheckLine } from 'react-icons/ri'
 import { StatCard, BarChartCSS, PieChartCSS, Spinner } from '../../../components/common'
-import AdminLayout from '../../../components/layout/AdminLayout/AdminLayout'
+import DashboardLayout from '../../../components/layout/DashboardLayout/DashboardLayout'
 import adminService from '../../../services/admin.service'
 import useAuthStore from '../../../store/authStore'
 
@@ -25,11 +25,11 @@ function DashboardOperator() {
   }
 
   if (loading) return (
-    <AdminLayout role="operator" user={userObj} activePath="/operator/dashboard">
+    <DashboardLayout role="operator" user={userObj} activePath="/operator/dashboard">
       <div className="flex justify-center py-20">
         <Spinner size="lg" />
       </div>
-    </AdminLayout>
+    </DashboardLayout>
   )
 
   const dataBar = data?.per_jalur?.map((item, i) => ({
@@ -41,7 +41,7 @@ function DashboardOperator() {
   const dataPie = data?.status_verifikasi || []
 
   return (
-    <AdminLayout role="operator" user={userObj} activePath="/operator/dashboard">
+    <DashboardLayout role="operator" user={userObj} activePath="/operator/dashboard">
       <div
         className="rounded-lg px-5 py-4 mb-5 flex justify-between items-center overflow-hidden relative"
         style={{ background: 'linear-gradient(130deg, #15803D, #22C55E)' }}
@@ -74,7 +74,7 @@ function DashboardOperator() {
           <PieChartCSS data={dataPie} />
         </div>
       </div>
-    </AdminLayout>
+    </DashboardLayout>
   )
 }
 

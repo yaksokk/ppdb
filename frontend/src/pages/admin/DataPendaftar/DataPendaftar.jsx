@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { RiSearchLine } from 'react-icons/ri'
 import { Badge, Button, Table, Tr, Td, Pagination, EmptyState, Spinner } from '../../../components/common'
-import AdminLayout from '../../../components/layout/AdminLayout/AdminLayout'
+import DashboardLayout from '../../../components/layout/DashboardLayout/DashboardLayout'
 import operatorService from '../../../services/operator.service'
 import useAuthStore from '../../../store/authStore'
 import adminService from '../../../services/admin.service'
@@ -56,7 +56,7 @@ function DataPendaftar() {
   }
 
   return (
-    <AdminLayout role={user?.role || 'operator'} user={userObj} activePath="/admin/pendaftar">
+    <DashboardLayout role={user?.role || 'operator'} user={userObj} activePath="/admin/pendaftar">
       <div className="mb-5">
         <h1 className="text-[19px] font-extrabold font-poppins text-n800">Data Pendaftar</h1>
       </div>
@@ -130,7 +130,7 @@ function DataPendaftar() {
           </div>
         </>
       )}
-    </AdminLayout>
+    </DashboardLayout>
   )
 }
 
