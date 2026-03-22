@@ -7,11 +7,11 @@ import pendaftarService from '../../../services/pendaftar.service'
 import useAuthStore from '../../../store/authStore'
 
 const STATUS_CONFIG = {
-  draft:      { label: 'Belum Mengisi',       desc: 'Silakan lengkapi formulir dan upload semua dokumen yang diperlukan.', icon: RiFileList3Line,    iconColor: 'text-n400' },
-  menunggu:   { label: 'Menunggu Verifikasi', desc: 'Dokumen kamu sedang diperiksa oleh operator. Harap tunggu.',          icon: RiFileList3Line,    iconColor: 'text-warning' },
-  perbaikan:  { label: 'Perlu Perbaikan',     desc: 'Ada dokumen yang perlu diperbaiki. Segera upload ulang.',             icon: RiUploadCloud2Line, iconColor: 'text-orange-500' },
-  diterima:   { label: 'Diterima',            desc: 'Selamat! Kamu diterima di SMP Negeri 1 Tumpaan.',                    icon: RiCheckLine,        iconColor: 'text-success' },
-  ditolak:    { label: 'Tidak Diterima',      desc: 'Maaf, kamu tidak diterima pada PPDB tahun ini.',                     icon: RiFileList3Line,    iconColor: 'text-danger' },
+  draft: { label: 'Belum Mengisi', desc: 'Silakan lengkapi formulir dan upload semua dokumen yang diperlukan.', icon: RiFileList3Line, iconColor: 'text-n400' },
+  menunggu: { label: 'Menunggu Verifikasi', desc: 'Dokumen kamu sedang diperiksa oleh operator. Harap tunggu.', icon: RiFileList3Line, iconColor: 'text-warning' },
+  perbaikan: { label: 'Perlu Perbaikan', desc: 'Ada dokumen yang perlu diperbaiki. Segera upload ulang.', icon: RiUploadCloud2Line, iconColor: 'text-orange-500' },
+  diterima: { label: 'Diterima', desc: 'Selamat! Kamu diterima di SMP Negeri 1 Tumpaan.', icon: RiCheckLine, iconColor: 'text-success' },
+  ditolak: { label: 'Tidak Diterima', desc: 'Maaf, kamu tidak diterima pada PPDB tahun ini.', icon: RiFileList3Line, iconColor: 'text-danger' },
 }
 
 const STEPS = [
@@ -25,10 +25,10 @@ function StepIndicator({ currentStep = 1 }) {
   return (
     <div className="flex items-center">
       {STEPS.map((step, i) => {
-        const stepNum  = i + 1
-        const isDone   = stepNum < currentStep
+        const stepNum = i + 1
+        const isDone = stepNum < currentStep
         const isActive = stepNum === currentStep
-        const isIdle   = stepNum > currentStep
+        const isIdle = stepNum > currentStep
 
         return (
           <div key={i} className="flex items-center flex-1 last:flex-none">
@@ -36,17 +36,17 @@ function StepIndicator({ currentStep = 1 }) {
               <div className={`
                 w-8 h-8 rounded-full flex items-center justify-center
                 text-[11px] font-bold transition-all duration-200
-                ${isDone   ? 'bg-success text-white' : ''}
+                ${isDone ? 'bg-success text-white' : ''}
                 ${isActive ? 'bg-primary text-white shadow-[0_0_0_4px_#EFF6FF]' : ''}
-                ${isIdle   ? 'bg-n200 text-n500' : ''}
+                ${isIdle ? 'bg-n200 text-n500' : ''}
               `}>
                 {isDone ? <RiCheckLine size={14} /> : stepNum}
               </div>
               <span className={`
                 text-[10px] font-semibold text-center max-w-[60px] leading-snug
-                ${isDone   ? 'text-success' : ''}
+                ${isDone ? 'text-success' : ''}
                 ${isActive ? 'text-primary' : ''}
-                ${isIdle   ? 'text-n400' : ''}
+                ${isIdle ? 'text-n400' : ''}
               `}>
                 {step.label}
               </span>
@@ -69,16 +69,23 @@ function getCurrentStep(status) {
 }
 
 function DashboardPendaftar() {
-  const navigate              = useNavigate()
-  const { user }              = useAuthStore()
+  const navigate = useNavigate()
+  const { user } = useAuthStore()
   const [pendaftaran, setPendaftaran] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [setting, setSetting] = useState(null)
 
   useEffect(() => {
     pendaftarService.getStatus()
       .then(res => setPendaftaran(res.data.pendaftaran))
       .catch(err => console.error(err))
       .finally(() => setLoading(false))
+
+    import('../../../services/api').then(({ default: api }) => {
+      api.get('/setting-publik')
+        .then(res => setSetting(res.data.settings))
+        .catch(() => { })
+    })
   }, [])
 
   const userObj = {
@@ -86,10 +93,10 @@ function DashboardPendaftar() {
     avatarStyle: { background: 'rgba(37,99,235,.25)', color: '#93C5FD' },
   }
 
-  const status       = pendaftaran?.status || 'draft'
+  const status = pendaftaran?.status || 'draft'
   const statusConfig = STATUS_CONFIG[status]
-  const Icon         = statusConfig.icon
-  const currentStep  = getCurrentStep(status)
+  const Icon = statusConfig.icon
+  const currentStep = getCurrentStep(status)
 
   if (loading) return (
     <DashboardLayout role="pendaftar" user={userObj} activePath="/pendaftar/dashboard">
@@ -98,6 +105,13 @@ function DashboardPendaftar() {
       </div>
     </DashboardLayout>
   )
+
+  const formatTanggal = (tgl) => {
+    if (!tgl) return '28 Februari 2025'
+    return new Date(tgl).toLocaleDateString('id-ID', {
+      day: 'numeric', month: 'long', year: 'numeric'
+    })
+  }
 
   return (
     <DashboardLayout role="pendaftar" user={userObj} activePath="/pendaftar/dashboard">
@@ -115,7 +129,7 @@ function DashboardPendaftar() {
           </h2>
           <p className="text-[12px] text-white/70">
             Selesaikan pendaftaran sebelum{' '}
-            <strong className="text-white">28 Februari 2025</strong>.
+            <strong className="text-white">{formatTanggal(setting?.tgl_tutup)}</strong>
           </p>
         </div>
         <RiFileList3Line size={64} className="text-white/10 flex-shrink-0" />
