@@ -65,7 +65,7 @@ function HasilSeleksiPendaftar() {
     doc.setFont('helvetica', 'bold')
     doc.text('BUKTI KELULUSAN PPDB', 105, 20, { align: 'center' })
     doc.text('SMP Negeri 1 Tumpaan', 105, 30, { align: 'center' })
-    doc.text('Tahun Ajaran 2025/2026', 105, 38, { align: 'center' })
+    doc.text(`Tahun Ajaran ${setting?.tahun_ajaran || '2025/2026'}`, 105, 38, { align: 'center' })
 
     doc.setLineWidth(0.5)
     doc.line(20, 43, 190, 43)
