@@ -6,6 +6,8 @@ import DashboardLayout from '../../../components/layout/DashboardLayout/Dashboar
 import operatorService from '../../../services/operator.service'
 import useAuthStore from '../../../store/authStore'
 import adminService from '../../../services/admin.service'
+import sawService from '../../../services/saw.service'
+import { Modal } from '../../../components/common'
 
 const STATUS_LABEL = {
   menunggu: 'Menunggu',
@@ -25,6 +27,10 @@ function DataPendaftar() {
   const [filterStatus, setFilterStatus] = useState('')
   const [filterJalur, setFilterJalur] = useState('')
   const [page, setPage] = useState(1)
+  const [jalurList, setJalurList] = useState([])
+  const [hitungModal, setHitungModal] = useState({ open: false, jalur_id: '', jalur_nama: '' })
+  const [hitungLoading, setHitungLoading] = useState(false)
+  const [hitungSuccess, setHitungSuccess] = useState('')
 
   const userObj = {
     name: user?.name || 'Operator',
@@ -48,11 +54,31 @@ function DataPendaftar() {
       .finally(() => setLoading(false))
   }
 
-  useEffect(() => { fetchData() }, [page])
+  useEffect(() => {
+    fetchData()
+    import('../../../services/api').then(({ default: api }) => {
+      api.get('/jalur-masuk').then(res => setJalurList(res.data.jalur))
+    })
+  }, [page])
 
   const handleSearch = () => {
     setPage(1)
     fetchData({ page: 1 })
+  }
+
+  const handleHitungSAW = async () => {
+    setHitungLoading(true)
+    try {
+      await sawService.hitung({ jalur_id: hitungModal.jalur_id })
+      setHitungSuccess(`Ranking SAW jalur ${hitungModal.jalur_nama} berhasil dihitung!`)
+      setTimeout(() => setHitungSuccess(''), 3000)
+      fetchData()
+      setHitungModal({ open: false, jalur_id: '', jalur_nama: '' })
+    } catch (err) {
+      console.error(err)
+    } finally {
+      setHitungLoading(false)
+    }
   }
 
   return (
@@ -94,11 +120,27 @@ function DataPendaftar() {
         </select>
       </div>
 
+      {user?.role === 'operator' && (
+        <div className="flex flex-col gap-2 mb-4">
+          {hitungSuccess && (
+            <p className="text-[12px] text-success font-semibold">{hitungSuccess}</p>
+          )}
+          <div className="flex gap-2 flex-wrap">
+            {jalurList.map(j => (
+              <Button key={j.id} size="sm" variant="ghost"
+                onClick={() => setHitungModal({ open: true, jalur_id: j.id, jalur_nama: j.nama })}>
+                Hitung SAW — {j.nama}
+              </Button>
+            ))}
+          </div>
+        </div>
+      )}
+
       {loading ? (
         <div className="flex justify-center py-20"><Spinner size="lg" /></div>
       ) : (
         <>
-          <Table headers={['No.', 'No. Daftar', 'Nama Siswa', 'Jenis Kelamin', 'Asal Sekolah', 'Jalur', 'Status', 'Aksi']}>
+          <Table headers={['No.', 'No. Daftar', 'Nama Siswa', 'Jenis Kelamin', 'Asal Sekolah', 'Jalur', 'Ranking', 'Skor SAW', 'Status', 'Aksi']}>
             {data.length === 0 ? (
               <tr><td colSpan={8}>
                 <EmptyState icon={RiSearchLine} title="Data tidak ditemukan" description="Coba ubah kata kunci pencarian." />
@@ -112,6 +154,12 @@ function DataPendaftar() {
                   <Td>{d.data_diri?.jenis_kelamin ?? '-'}</Td>
                   <Td>{d.data_diri?.asal_sekolah ?? '-'}</Td>
                   <Td className="font-semibold">{d.jalur?.nama ?? '-'}</Td>
+                  <Td className="font-bold text-primary text-center">
+                    {d.seleksi?.ranking ? `#${d.seleksi.ranking}` : '-'}
+                  </Td>
+                  <Td className="text-center font-semibold">
+                    {d.seleksi?.skor_saw ? parseFloat(d.seleksi.skor_saw).toFixed(4) : '-'}
+                  </Td>
                   <Td><Badge variant={d.status}>{STATUS_LABEL[d.status]}</Badge></Td>
                   <Td>
                     <Button size="xs" variant={d.status === 'diterima' || d.status === 'ditolak' ? 'ghost' : 'primary'}
@@ -130,6 +178,19 @@ function DataPendaftar() {
           </div>
         </>
       )}
+
+      <Modal isOpen={hitungModal.open} onClose={() => setHitungModal({ open: false, jalur_id: '', jalur_nama: '' })}
+        title="Hitung Ranking SAW">
+        <p className="text-[13px] text-n600 mb-4">
+          Hitung ranking SAW untuk jalur <strong>{hitungModal.jalur_nama}</strong>? Semua pendaftar jalur ini yang sudah diinput nilainya akan diranking ulang.
+        </p>
+        <div className="flex gap-2 justify-end">
+          <Button variant="ghost" onClick={() => setHitungModal({ open: false, jalur_id: '', jalur_nama: '' })}>Batal</Button>
+          <Button disabled={hitungLoading} onClick={handleHitungSAW}>
+            {hitungLoading ? <Spinner size="sm" color="white" /> : 'Ya, Hitung Sekarang'}
+          </Button>
+        </div>
+      </Modal>
     </DashboardLayout>
   )
 }

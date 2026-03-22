@@ -12,7 +12,7 @@ class OperatorController extends Controller
 {
     public function listPendaftar(Request $request)
     {
-        $query = Pendaftaran::with(['dataDiri', 'jalur', 'dokumen']);
+        $query = Pendaftaran::with(['dataDiri', 'jalur', 'dokumen', 'seleksi']);
 
         if ($request->search) {
             $query->whereHas('dataDiri', function ($q) use ($request) {
@@ -64,12 +64,8 @@ class OperatorController extends Controller
 
     public function hasilSeleksi(Request $request)
     {
-        $query = Pendaftaran::with(['dataDiri', 'jalur', 'seleksi'])
-                            ->whereIn('status', ['diterima', 'ditolak']);
-
-        if ($request->jalur_id) {
-            $query->where('jalur_id', $request->jalur_id);
-        }
+$query = Pendaftaran::with(['dataDiri', 'jalur', 'dokumen', 'seleksi'])
+                    ->whereIn('status', ['diterima', 'ditolak']);
 
         if ($request->status) {
             $statusLulus = $request->status === 'diterima' ? true : false;

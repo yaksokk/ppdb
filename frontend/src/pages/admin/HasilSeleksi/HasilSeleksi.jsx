@@ -4,7 +4,6 @@ import { Badge, Button, Table, Tr, Td, EmptyState, Modal, Spinner } from '../../
 import DashboardLayout from '../../../components/layout/DashboardLayout/DashboardLayout'
 import operatorService from '../../../services/operator.service'
 import useAuthStore from '../../../store/authStore'
-import sawService from '../../../services/saw.service'
 import * as XLSX from 'xlsx'
 import { saveAs } from 'file-saver'
 
@@ -22,10 +21,6 @@ function HasilSeleksi() {
   const [filterJalur, setFilterJalur] = useState('')
   const [ubahModal, setUbahModal] = useState({ open: false, item: null })
   const [saving, setSaving] = useState(false)
-  const [jalurList, setJalurList] = useState([])
-  const [hitungModal, setHitungModal] = useState({ open: false, jalur_id: '', jalur_nama: '' })
-  const [hitungLoading, setHitungLoading] = useState(false)
-  const [hitungSuccess, setHitungSuccess] = useState('')
 
   const userObj = {
     name: user?.name || 'Operator',
@@ -41,26 +36,9 @@ function HasilSeleksi() {
   }
 
   useEffect(() => {
-    import('../../../services/api').then(({ default: api }) => {
-      api.get('/jalur-masuk').then(res => setJalurList(res.data.jalur))
-    })
     fetchData()
   }, [filterStatus, filterJalur])
 
-  const handleHitungSAW = async () => {
-    setHitungLoading(true)
-    try {
-      await sawService.hitung({ jalur_id: hitungModal.jalur_id })
-      setHitungSuccess(`Ranking SAW jalur ${hitungModal.jalur_nama} berhasil dihitung!`)
-      setTimeout(() => setHitungSuccess(''), 3000)
-      fetchData()
-      setHitungModal({ open: false, jalur_id: '', jalur_nama: '' })
-    } catch (err) {
-      console.error(err)
-    } finally {
-      setHitungLoading(false)
-    }
-  }
 
   const handleUbah = async (newStatus) => {
     setSaving(true)
@@ -141,19 +119,6 @@ function HasilSeleksi() {
         </Button>
       </div>
 
-      {hitungSuccess && (
-        <div className="mb-3 text-[12px] text-success font-semibold">{hitungSuccess}</div>
-      )}
-
-      <div className="flex gap-2 mb-4 flex-wrap">
-        {jalurList.map(j => (
-          <Button key={j.id} size="sm" variant="ghost"
-            onClick={() => setHitungModal({ open: true, jalur_id: j.id, jalur_nama: j.nama })}>
-            Hitung SAW — {j.nama}
-          </Button>
-        ))}
-      </div>
-
       {loading ? (
         <div className="flex justify-center py-20"><Spinner size="lg" /></div>
       ) : (
@@ -223,18 +188,6 @@ function HasilSeleksi() {
         )}
       </Modal>
 
-      <Modal isOpen={hitungModal.open} onClose={() => setHitungModal({ open: false, jalur_id: '', jalur_nama: '' })}
-        title="Hitung Ranking SAW">
-        <p className="text-[13px] text-n600 mb-4">
-          Hitung ranking SAW untuk jalur <strong>{hitungModal.jalur_nama}</strong>? Semua pendaftar jalur ini yang sudah diinput nilainya akan diranking ulang.
-        </p>
-        <div className="flex gap-2 justify-end">
-          <Button variant="ghost" onClick={() => setHitungModal({ open: false, jalur_id: '', jalur_nama: '' })}>Batal</Button>
-          <Button variant="primary" disabled={hitungLoading} onClick={handleHitungSAW}>
-            {hitungLoading ? <Spinner size="sm" color="white" /> : 'Ya, Hitung Sekarang'}
-          </Button>
-        </div>
-      </Modal>
     </DashboardLayout>
   )
 }

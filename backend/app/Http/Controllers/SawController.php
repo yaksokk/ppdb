@@ -42,7 +42,10 @@ class SawController extends Controller
 
         $nilaiNormalisasi = [];
         foreach ($kriteria as $k) {
-            $nilaiKolom = array_column(array_map(fn($row) => [$k->id => $row[$k->id]], $nilaiMatrix), $k->id);
+            $nilaiKolom = [];
+            foreach ($pendaftaran as $p) {
+                $nilaiKolom[] = $nilaiMatrix[$p->id][$k->id];
+            }
 
             if ($k->jenis === 'benefit') {
                 $best = max($nilaiKolom);

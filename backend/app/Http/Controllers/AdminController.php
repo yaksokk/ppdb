@@ -51,7 +51,7 @@ class AdminController extends Controller
 
     public function listPendaftar(Request $request)
     {
-        $query = Pendaftaran::with(['dataDiri', 'jalur', 'dokumen']);
+        $query = Pendaftaran::with(['dataDiri', 'jalur', 'dokumen', 'seleksi']);
 
         if ($request->search) {
             $query->whereHas('dataDiri', function ($q) use ($request) {
