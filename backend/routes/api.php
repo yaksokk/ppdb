@@ -26,6 +26,12 @@ Route::get('/jalur-masuk', function () {
 });
 
 Route::get('/cek-status/{no_pendaftaran}', [PendaftarController::class, 'cekStatus']);
+Route::get('/setting-publik', function () {
+    $settings = \App\Models\Setting::whereIn('key', [
+        'nama_sekolah', 'tgl_daftar_ulang', 'tahun_ajaran'
+    ])->get()->pluck('value', 'key');
+    return response()->json(['settings' => $settings]);
+});
 
 Route::middleware(['auth:sanctum', 'role:pendaftar'])->prefix('pendaftar')->group(function () {
     Route::post('/formulir',       [PendaftarController::class, 'submitFormulir']);

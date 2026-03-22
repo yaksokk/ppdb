@@ -4,6 +4,7 @@ import { RiEmotionHappyLine, RiEmotionUnhappyLine } from 'react-icons/ri'
 import { Badge, Button, Spinner } from '../../../components/common'
 import DashboardLayout from '../../../components/layout/DashboardLayout/DashboardLayout'
 import pendaftarService from '../../../services/pendaftar.service'
+import adminService from '../../../services/admin.service'
 import useAuthStore from '../../../store/authStore'
 import jsPDF from 'jspdf'
 
@@ -20,6 +21,7 @@ function HasilSeleksiPendaftar() {
   const { user } = useAuthStore()
   const [pendaftaran, setPendaftaran] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [setting, setSetting] = useState(null)
 
   const userObj = {
     name: user?.name || 'Pendaftar',
@@ -27,6 +29,12 @@ function HasilSeleksiPendaftar() {
   }
 
   useEffect(() => {
+    import('../../../services/api').then(({ default: api }) => {
+      api.get('/setting-publik')
+        .then(res => setSetting(res.data.settings))
+        .catch(() => { })
+    })
+
     pendaftarService.getHasil()
       .then(res => setPendaftaran(res.data.pendaftaran))
       .catch(err => console.error(err))
@@ -103,8 +111,8 @@ function HasilSeleksiPendaftar() {
 
     doc.setFont('helvetica', 'normal')
     doc.setFontSize(10)
-    doc.text('Tanggal : 16-20 Maret 2025', 30, y + 25)
-    doc.text('Tempat  : Ruang TU SMP N 1 Tumpaan', 30, y + 33)
+    doc.text(`Tanggal : ${setting?.tgl_daftar_ulang || '16-20 Maret 2025'}`, 30, y + 25)
+    doc.text(`Tempat  : ${setting?.nama_sekolah || 'SMP N 1 Tumpaan'}`, 30, y + 33)
     doc.text('Jam     : 08.00-12.00 WITA', 30, y + 41)
     doc.text('Bawa: Ijazah asli, Akta asli, KK asli, pas foto 3x4 (4 lembar),', 30, y + 51)
     doc.text('dan bukti kelulusan yang dicetak.', 30, y + 59)
@@ -189,8 +197,8 @@ function HasilSeleksiPendaftar() {
         {diterima && (
           <div className="bg-white border border-n200 rounded-lg p-5 shadow-xs">
             <p className="text-[15px] font-bold font-poppins text-primary mb-3">Informasi Daftar Ulang</p>
-            <InfoRow label="Tanggal" value="16-20 Maret 2025" />
-            <InfoRow label="Tempat" value="Ruang TU SMP N 1 Tumpaan" />
+            <InfoRow label="Tanggal" value={setting?.tgl_daftar_ulang || '-'} />
+            <InfoRow label="Tempat" value={setting?.nama_sekolah || 'SMP N 1 Tumpaan'} />
             <InfoRow label="Jam" value="08.00-12.00 WITA" />
             <div className="mt-3 bg-primary-light border border-blue-200 rounded-sm px-3 py-2.5">
               <p className="text-[12px] text-blue-800 leading-relaxed">
