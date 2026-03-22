@@ -7,11 +7,6 @@ import useAuthStore from '../../../store/authStore'
 import * as XLSX from 'xlsx'
 import { saveAs } from 'file-saver'
 
-const STATUS_LABEL = {
-  diterima: 'Diterima',
-  ditolak: 'Tidak Diterima',
-}
-
 function HasilSeleksi() {
   const { user } = useAuthStore()
   const [data, setData] = useState([])
