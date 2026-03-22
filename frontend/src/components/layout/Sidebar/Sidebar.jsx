@@ -45,7 +45,7 @@ function Sidebar({ role = 'admin', user = {}, activePath = '', onLogout }) {
       console.error(err)
     } finally {
       clearAuth()
-      navigate('/login')
+      navigate('/')
     }
   }
 
