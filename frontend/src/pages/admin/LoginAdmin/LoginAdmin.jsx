@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate, Link } from 'react-router-dom'
+import { useNavigate, Link, useSearchParams } from 'react-router-dom'
 import { RiSchoolLine, RiEyeLine, RiEyeOffLine, RiShieldUserLine, RiUserSettingsLine } from 'react-icons/ri'
 import { Button, Spinner } from '../../../components/common'
 import { FormInput } from '../../../components/form'
@@ -10,10 +10,11 @@ function LoginAdmin() {
   const navigate = useNavigate()
   const { setAuth } = useAuthStore()
   const [showPassword, setShowPassword] = useState(false)
-  const [role, setRole] = useState('admin')
   const [form, setForm] = useState({ email: '', password: '' })
   const [errors, setErrors] = useState({})
   const [loading, setLoading] = useState(false)
+  const [searchParams] = useSearchParams()
+  const [role, setRole] = useState(searchParams.get('role') || 'admin')
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value })
