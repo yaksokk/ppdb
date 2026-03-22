@@ -26,9 +26,12 @@ Route::get('/jalur-masuk', function () {
 });
 
 Route::get('/cek-status/{no_pendaftaran}', [PendaftarController::class, 'cekStatus']);
+
 Route::get('/setting-publik', function () {
     $settings = \App\Models\Setting::whereIn('key', [
-        'nama_sekolah', 'tgl_daftar_ulang', 'tahun_ajaran'
+        'nama_sekolah', 'alamat', 'email', 'no_telepon',
+        'tahun_ajaran', 'tgl_buka', 'tgl_tutup',
+        'tgl_verifikasi', 'tgl_pengumuman', 'tgl_daftar_ulang'
     ])->get()->pluck('value', 'key');
     return response()->json(['settings' => $settings]);
 });

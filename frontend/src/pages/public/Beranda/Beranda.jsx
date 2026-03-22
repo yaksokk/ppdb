@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom'
+import { useState, useEffect } from 'react'
 import {
     RiSchoolLine, RiCheckLine, RiSmartphoneLine, RiTimeLine,
     RiFileTextLine, RiHomeSmileLine, RiTrophyLine, RiBankCardLine,
@@ -34,20 +35,20 @@ const LANGKAH = [
     { no: 5, label: 'Pengumuman', desc: 'Hasil seleksi diumumkan dan dapat dilihat di dashboard' },
 ]
 
-const JADWAL = [
-    { kegiatan: 'Sosialisasi PPDB', tanggal: '1-10 Januari 2025', keterangan: 'Informasi disebarkan ke SD/MI se-kecamatan', aktif: false },
-    { kegiatan: 'Pendaftaran & Upload Dokumen', tanggal: '15 Jan - 28 Feb 2025', keterangan: 'Batas akhir kirim semua dokumen', aktif: true },
-    { kegiatan: 'Verifikasi Berkas', tanggal: '1-10 Maret 2025', keterangan: 'Panitia memeriksa dokumen seluruh pendaftar', aktif: false },
-    { kegiatan: 'Pengumuman Hasil Seleksi', tanggal: '15 Maret 2025', keterangan: 'Hasil dapat dilihat di dashboard akun masing-masing', aktif: false },
-    { kegiatan: 'Daftar Ulang Siswa Diterima', tanggal: '16-20 Maret 2025', keterangan: 'Ruang TU · 08.00-12.00 WITA · wajib bawa dokumen asli', aktif: false },
-]
-
 function SectionLabel({ text }) {
     return <p className="text-[13px] font-bold text-primary uppercase tracking-widest mb-2">{text}</p>
 }
 
 function Beranda() {
     const navigate = useNavigate()
+    const [setting, setSetting] = useState(null)
+
+    useEffect(() => {
+        import('../../../services/api').then(({ default: api }) => {
+            api.get('/setting-publik').then(res => setSetting(res.data.settings))
+                .catch(() => { })
+        })
+    }, [])
 
     return (
         <div className="min-h-screen bg-white font-jakarta">
@@ -92,7 +93,9 @@ function Beranda() {
                 <div className="max-w-2xl">
                     <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-white/10 border border-white/20 rounded-pill mb-6">
                         <RiSchoolLine size={13} className="text-white/70" />
-                        <span className="text-[12px] text-white/70 font-medium">PPDB Tahun Ajaran 2025 / 2026</span>
+                        <span className="text-[12px] text-white/70 font-medium">
+                            PPDB Tahun Ajaran {setting?.tahun_ajaran || '2025/2026'}
+                        </span>
                     </div>
 
                     <h1 className="text-[40px] font-extrabold text-white font-poppins leading-tight mb-4">
@@ -234,7 +237,12 @@ function Beranda() {
                                 </tr>
                             </thead>
                             <tbody>
-                                {JADWAL.map((row, i) => (
+                                {[
+                                    { kegiatan: 'Pendaftaran & Upload Dokumen', tanggal: setting?.tgl_buka && setting?.tgl_tutup ? `${setting.tgl_buka} - ${setting.tgl_tutup}` : '-', keterangan: 'Batas akhir kirim semua dokumen', aktif: true },
+                                    { kegiatan: 'Verifikasi Berkas', tanggal: setting?.tgl_verifikasi || '-', keterangan: 'Panitia memeriksa dokumen seluruh pendaftar', aktif: false },
+                                    { kegiatan: 'Pengumuman Hasil Seleksi', tanggal: setting?.tgl_pengumuman || '-', keterangan: 'Hasil dapat dilihat di dashboard akun masing-masing', aktif: false },
+                                    { kegiatan: 'Daftar Ulang Siswa Diterima', tanggal: setting?.tgl_daftar_ulang || '-', keterangan: 'Ruang TU · 08.00-12.00 WITA · wajib bawa dokumen asli', aktif: false },
+                                ].map((row, i) => (
                                     <tr key={i} className={`border-b border-n200 last:border-0 ${row.aktif ? 'bg-primary-light' : ''}`}>
                                         <td className={`px-5 py-3 text-[13px] ${row.aktif ? 'text-primary font-bold' : 'text-n700'}`}>{row.kegiatan}</td>
                                         <td className={`px-5 py-3 text-[13px] ${row.aktif ? 'text-primary font-bold' : 'text-n600'}`}>{row.tanggal}</td>
@@ -248,7 +256,9 @@ function Beranda() {
                     <div className="flex items-start gap-2 bg-warning-light border border-amber-200 rounded-sm px-4 py-3">
                         <RiAlertLine size={14} className="text-warning flex-shrink-0 mt-0.5" />
                         <p className="text-[12px] text-amber-800">
-                            <strong>Perhatian:</strong> Batas akhir upload dokumen adalah <strong>28 Februari 2025</strong>. Dokumen yang belum diunggah tidak akan diproses panitia.
+                            <strong>Perhatian:</strong> Batas akhir upload dokumen adalah{' '}
+                            <strong>{setting?.tgl_tutup || '28 Februari 2025'}</strong>.{' '}
+                            Dokumen yang belum diunggah tidak akan diproses panitia.
                         </p>
                     </div>
                 </div>
@@ -268,12 +278,14 @@ function Beranda() {
                             <div className="w-12 h-12 bg-primary rounded-[14px] flex items-center justify-center mx-auto mb-3">
                                 <RiSchoolLine size={22} color="#fff" />
                             </div>
-                            <p className="text-[14px] font-bold text-white font-poppins mb-1">SMP Negeri 1 Tumpaan</p>
+                            <p className="text-[14px] font-bold text-white font-poppins mb-1">
+                                {setting?.nama_sekolah || 'SMP Negeri 1 Tumpaan'}
+                            </p>
                             <p className="text-[11px] text-white/50 leading-relaxed">
-                                Jl. Trans Sulawesi, Tumpaan, Kab. Minahasa Selatan, Sulawesi Utara
+                                {setting?.alamat || 'Jl. Trans Sulawesi, Tumpaan, Kab. Minahasa Selatan, Sulawesi Utara'}
                             </p>
                             <p className="text-[11px] text-white/50 mt-1">
-                                ppdb@smpn1tumpaan.sch.id · (0431) 888-XXX
+                                {setting?.email || 'ppdb@smpn1tumpaan.sch.id'} · {setting?.no_telepon || '(0431) 888-XXX'}
                             </p>
                         </div>
 
