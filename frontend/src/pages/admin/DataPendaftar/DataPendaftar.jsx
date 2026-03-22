@@ -114,9 +114,9 @@ function DataPendaftar() {
                   <Td className="font-semibold">{d.jalur?.nama ?? '-'}</Td>
                   <Td><Badge variant={d.status}>{STATUS_LABEL[d.status]}</Badge></Td>
                   <Td>
-                    <Button size="xs" variant={d.status === 'diterima' ? 'ghost' : 'primary'}
+                    <Button size="xs" variant={d.status === 'diterima' || d.status === 'ditolak' ? 'ghost' : 'primary'}
                       onClick={() => navigate(`/admin/pendaftar/${d.id}`)}>
-                      {d.status === 'diterima' ? 'Detail' : 'Verifikasi'}
+                      {d.status === 'diterima' || d.status === 'ditolak' ? 'Detail' : 'Verifikasi'}
                     </Button>
                   </Td>
                 </Tr>
