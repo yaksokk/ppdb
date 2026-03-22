@@ -147,7 +147,7 @@ function DetailPendaftar() {
           <div>
             <p className="text-[10px] font-bold text-n400 uppercase tracking-wide">{dok.jenis}</p>
             <p className="text-[12px] font-semibold text-primary cursor-pointer hover:underline">
-              {dok.file_path?.split('/').pop()}
+              {dok.nama_file || dok.file_path?.split('/').pop()}
             </p>
           </div>
         </div>

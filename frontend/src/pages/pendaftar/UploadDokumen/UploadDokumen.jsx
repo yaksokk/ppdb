@@ -41,7 +41,7 @@ function DokItem({ dok, statusData, onUpload, loading }) {
               {dok.jalur && <span className="text-[11px] font-normal text-n500 ml-1">({dok.jalur})</span>}
             </p>
             <p className="text-[11px] text-n500">
-              {s?.file_path ? `${s.file_path.split('/').pop()} — klik untuk ganti` : 'Klik untuk pilih file · JPG / PNG / PDF · Maks. 2 MB'}
+              {s?.file_path ? `${s.nama_file || s.file_path.split('/').pop()} — klik untuk ganti` : 'Klik untuk pilih file · JPG / PNG / PDF · Maks. 2 MB'}
             </p>
           </div>
         </div>

@@ -9,7 +9,7 @@ class Dokumen extends Model
     protected $table = 'dokumen';
 
     protected $fillable = [
-        'pendaftaran_id', 'jenis', 'file_path',
+        'pendaftaran_id', 'jenis', 'file_path', 'nama_file',
         'status', 'catatan', 'verified_by', 'verified_at',
     ];
 

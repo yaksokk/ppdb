@@ -88,11 +88,12 @@ class PendaftarController extends Controller
         $user        = $request->user();
         $pendaftaran = Pendaftaran::where('user_id', $user->id)->firstOrFail();
 
+        $namaFile = $request->file('file')->getClientOriginalName();
         $path = $request->file('file')->store('dokumen/' . $pendaftaran->id, 'public');
 
         Dokumen::updateOrCreate(
             ['pendaftaran_id' => $pendaftaran->id, 'jenis' => $request->jenis],
-            ['file_path' => $path, 'status' => 'belum']
+            ['file_path' => $path, 'nama_file' => $namaFile, 'status' => 'belum']
         );
 
         return response()->json(['message' => 'Dokumen berhasil diupload']);
