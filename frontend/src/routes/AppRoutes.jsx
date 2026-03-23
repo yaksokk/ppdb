@@ -14,6 +14,7 @@ import KelolaInfo from '../pages/admin/KelolaInfo/KelolaInfo'
 import KelolaAkun from '../pages/admin/KelolaAkun/KelolaAkun'
 import Formulir from '../pages/pendaftar/Formulir/Formulir'
 import KriteriaSAW from '../pages/admin/KriteriaSaw/KriteriaSaw'
+import KelolaPendaftar from '../pages/admin/KelolaPendaftar/KelolaPendaftar'
 import UploadDokumen from '../pages/pendaftar/UploadDokumen/UploadDokumen'
 import HasilSeleksiPendaftar from '../pages/pendaftar/HasilSeleksi/HasilSeleksi'
 import Beranda from '../pages/public/Beranda/Beranda'
@@ -28,6 +29,9 @@ function AppRoutes() {
 
       <Route path="/admin/dashboard" element={
         <PrivateRoute><RoleRoute allowedRoles={['admin']}><Dashboard /></RoleRoute></PrivateRoute>
+      } />
+      <Route path="/admin/pendaftar-akun" element={
+        <PrivateRoute><RoleRoute allowedRoles={['admin']}><KelolaPendaftar /></RoleRoute></PrivateRoute>
       } />
       <Route path="/admin/pendaftar" element={
         <PrivateRoute><RoleRoute allowedRoles={['admin', 'operator']}><DataPendaftar /></RoleRoute></PrivateRoute>

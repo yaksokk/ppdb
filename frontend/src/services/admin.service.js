@@ -13,6 +13,9 @@ const adminService = {
   getSetting:         ()         => api.get('/admin/setting'),
   updateSetting:      (data)     => api.put('/admin/setting', data),
   getLog:             ()         => api.get('/admin/log'),
+  listPendaftarAkun:    (params)   => api.get('/admin/pendaftar-akun', { params }),
+  toggleAktifPendaftar: (id)       => api.put(`/admin/pendaftar-akun/${id}/toggle`),
+  hapusPendaftarAkun:   (id)       => api.delete(`/admin/pendaftar-akun/${id}`),
 }
 
 export default adminService
