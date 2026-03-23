@@ -54,6 +54,9 @@ Route::middleware(['auth:sanctum', 'role:admin'])->prefix('admin')->group(functi
     Route::get('/setting',           [AdminController::class, 'getSetting']);
     Route::put('/setting',           [AdminController::class, 'updateSetting']);
     Route::get('/log',               [AdminController::class, 'logAktivitas']);
+    Route::get('/pendaftar-akun',              [AdminController::class, 'listPendaftarAkun']);
+    Route::put('/pendaftar-akun/{id}/toggle',  [AdminController::class, 'toggleAktifPendaftar']);
+    Route::delete('/pendaftar-akun/{id}',      [AdminController::class, 'hapusPendaftarAkun']);
 });
 
 Route::middleware(['auth:sanctum', 'role:admin|operator'])->group(function () {
