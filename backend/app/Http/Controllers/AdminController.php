@@ -209,4 +209,39 @@ class AdminController extends Controller
             'ip_address' => $request->ip(),
         ]);
     }
+
+    public function listPendaftarAkun(Request $request)
+    {
+        $query = User::role('pendaftar')
+            ->with('pendaftaran')
+            ->select('id', 'name', 'email', 'is_active', 'created_at');
+
+        if ($request->search) {
+            $query->where(function ($q) use ($request) {
+                $q->where('name', 'like', '%' . $request->search . '%')
+                ->orWhere('email', 'like', '%' . $request->search . '%');
+            });
+        }
+
+        return response()->json(['pendaftar' => $query->paginate(10)]);
+    }
+
+    public function toggleAktifPendaftar($id)
+    {
+        $user = User::findOrFail($id);
+        $user->update(['is_active' => !$user->is_active]);
+
+        return response()->json([
+            'message'   => $user->is_active ? 'Akun berhasil diaktifkan' : 'Akun berhasil dinonaktifkan',
+            'is_active' => $user->is_active,
+        ]);
+    }
+
+    public function hapusPendaftarAkun($id)
+    {
+        $user = User::findOrFail($id);
+        $user->delete();
+
+        return response()->json(['message' => 'Akun pendaftar berhasil dihapus']);
+    }
 }
