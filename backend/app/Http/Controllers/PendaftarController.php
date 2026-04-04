@@ -167,4 +167,63 @@ class PendaftarController extends Controller
             'status'         => $pendaftaran->status,
         ]);
     }
+    public function saveDraft(Request $request)
+    {
+        $request->validate([
+            'jalur_id' => 'nullable|exists:jalur_masuk,id',
+            'nama_lengkap' => 'nullable|string',
+            'nisn' => 'nullable|string',
+            'jenis_kelamin' => 'nullable|string',
+            'tempat_lahir' => 'nullable|string',
+            'tgl_lahir' => 'nullable|date',
+            'agama' => 'nullable|string',
+            'asal_sekolah' => 'nullable|string',
+            'tahun_lulus' => 'nullable|string',
+            'nama_ortu' => 'nullable|string',
+            'hubungan' => 'nullable|string',
+            'no_telepon' => 'nullable|string',
+        ]);
+
+        $user = $request->user();
+
+        $pendaftaran = Pendaftaran::updateOrCreate(
+            ['user_id' => $user->id],
+            [
+                'jalur_id' => $request->jalur_id,
+                'no_pendaftaran' => $this->generateNoPendaftaran(),
+                'status' => 'draft',
+            ]
+        );
+
+        if ($request->filled('nama_lengkap') || $request->filled('nisn')) {
+            DataDiri::updateOrCreate(
+                ['pendaftaran_id' => $pendaftaran->id],
+                array_filter([
+                    'nama_lengkap'  => $request->nama_lengkap,
+                    'nisn'          => $request->nisn,
+                    'jenis_kelamin' => $request->jenis_kelamin,
+                    'tempat_lahir'  => $request->tempat_lahir,
+                    'tgl_lahir'     => $request->tgl_lahir,
+                    'agama'         => $request->agama,
+                    'asal_sekolah'  => $request->asal_sekolah,
+                    'tahun_lulus'   => $request->tahun_lulus,
+                ], fn($v) => $v !== null && $v !== '')
+            );
+        }
+
+        if ($request->filled('nama_ortu') || $request->filled('no_telepon')) {
+            DataOrangTua::updateOrCreate(
+                ['pendaftaran_id' => $pendaftaran->id],
+                array_filter([
+                    'nama'       => $request->nama_ortu,
+                    'hubungan'   => $request->hubungan,
+                    'pekerjaan'  => $request->pekerjaan,
+                    'no_telepon' => $request->no_telepon,
+                    'alamat'     => $request->alamat,
+                ], fn($v) => $v !== null && $v !== '')
+            );
+        }
+
+        return response()->json(['message' => 'Draft berhasil disimpan']);
+    }
 }

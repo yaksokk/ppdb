@@ -39,6 +39,7 @@ Route::get('/setting-publik', function () {
 Route::middleware(['auth:sanctum', 'role:pendaftar'])->prefix('pendaftar')->group(function () {
     Route::post('/formulir',       [PendaftarController::class, 'submitFormulir']);
     Route::put('/formulir',        [PendaftarController::class, 'submitFormulir']);
+    Route::post('/formulir/draft',  [PendaftarController::class, 'saveDraft']); 
     Route::post('/dokumen',        [PendaftarController::class, 'uploadDokumen']);
     Route::delete('/dokumen/{id}', [PendaftarController::class, 'hapusDokumen']);
     Route::post('/submit',         [PendaftarController::class, 'submit']);
