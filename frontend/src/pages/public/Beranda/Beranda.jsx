@@ -246,7 +246,7 @@ function Beranda() {
                                     <tr key={i} className={`border-b border-n200 last:border-0 ${row.aktif ? 'bg-primary-light' : ''}`}>
                                         <td className={`px-5 py-3 text-[13px] ${row.aktif ? 'text-primary font-bold' : 'text-n700'}`}>{row.kegiatan}</td>
                                         <td className={`px-5 py-3 text-[13px] ${row.aktif ? 'text-primary font-bold' : 'text-n600'}`}>{row.tanggal}</td>
-                                        <td className={`px-5 py-3 text-[12px] text-right ${row.aktif ? 'text-primary font-semibold' : 'text-n500'}`}>{row.keterangan}</td>
+                                        <td className={`px-5 py-3 text-[12px] text-left ${row.aktif ? 'text-primary font-semibold' : 'text-n500'}`}>{row.keterangan}</td>
                                     </tr>
                                 ))}
                             </tbody>
