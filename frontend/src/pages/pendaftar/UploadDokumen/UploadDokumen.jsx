@@ -14,48 +14,89 @@ const DOKUMEN_WAJIB = [
 ]
 
 const DOKUMEN_OPSIONAL = [
-  { id: 'kip',        nama: 'Kartu KIP / PKH',           jalur: 'Jalur Afirmasi',  icon: RiBankCardLine  },
-  { id: 'sertifikat', nama: 'Sertifikat / Piagam Prestasi', jalur: 'Jalur Prestasi', icon: RiTrophyLine  },
-  { id: 'surattugas', nama: 'Surat Tugas Orang Tua',     jalur: 'Jalur Mutasi',    icon: RiFileTextLine  },
+  { id: 'kip',        nama: 'Kartu KIP / PKH',              jalur: 'Jalur Afirmasi', icon: RiBankCardLine },
+  { id: 'sertifikat', nama: 'Sertifikat / Piagam Prestasi', jalur: 'Jalur Prestasi', icon: RiTrophyLine   },
+  { id: 'surattugas', nama: 'Surat Tugas Orang Tua',        jalur: 'Jalur Mutasi',   icon: RiFileTextLine },
 ]
 
-function DokItem({ dok, statusData, onUpload, loading }) {
-  const ref  = useRef()
-  const Icon = dok.icon
-  const s    = statusData[dok.id]
+const DOKUMEN_OPSIONAL_MAP = {
+  afirmasi: ['kip'],
+  prestasi: ['sertifikat'],
+  mutasi:   ['surattugas'],
+  zonasi:   [],
+}
 
-  const bgClass = s?.status === 'valid'      ? 'border-green-200 bg-success-light'
-                : s?.status === 'perbaikan'  ? 'border-orange-200 bg-orange-50'
-                : 'border-dashed border-n300 bg-white hover:border-primary hover:bg-primary-light/30'
+function DokItem({ dok, statusData, onUpload, loading }) {
+  const ref = useRef()
+  const Icon = dok.icon
+  const s = statusData[dok.id]
+  const namaFile = s?.nama_file || s?.file_path?.split('/').pop() || null
+
+  const bgClass = s?.status === 'valid'
+    ? 'border-green-200 bg-success-light'
+    : s?.status === 'perbaikan'
+    ? 'border-orange-200 bg-orange-50'
+    : 'border-dashed border-n300 bg-white'
+
+  const storageUrl = import.meta.env.VITE_STORAGE_URL || 'http://localhost/storage'
 
   return (
-    <div className={`border-2 rounded-md p-4 transition-all duration-150 ${bgClass} ${loading ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}
-      onClick={() => !loading && ref.current.click()}
-    >
+    <div className={'border-2 rounded-md p-4 transition-all duration-150 ' + bgClass}>
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Icon size={20} className={`flex-shrink-0 ${s?.status === 'valid' ? 'text-success' : s?.status === 'perbaikan' ? 'text-orange-500' : 'text-n400'}`} />
+          <Icon
+            size={20}
+            className={'flex-shrink-0 ' + (
+              s?.status === 'valid' ? 'text-success' :
+              s?.status === 'perbaikan' ? 'text-orange-500' : 'text-n400'
+            )}
+          />
           <div>
             <p className="text-[13px] font-semibold text-n800">
-              {dok.nama} {dok.wajib && <span className="text-danger">*</span>}
+              {dok.nama}
+              {dok.wajib && <span className="text-danger"> *</span>}
               {dok.jalur && <span className="text-[11px] font-normal text-n500 ml-1">({dok.jalur})</span>}
             </p>
-            <p className="text-[11px] text-n500">
-              {s?.file_path ? `${s.nama_file || s.file_path.split('/').pop()} — klik untuk ganti` : 'Klik untuk pilih file · JPG / PNG / PDF · Maks. 2 MB'}
-            </p>
+            {namaFile ? (
+              <span className="text-[11px] text-n600 font-medium">{namaFile}</span>
+            ) : (
+              <span className="text-[11px] text-n400">Belum ada file · JPG / PNG / PDF · Maks. 2 MB</span>
+            )}
           </div>
         </div>
-        {s?.status === 'valid' && (
-          <span className="text-[12px] font-semibold text-success flex items-center gap-1">
-            <RiCheckLine size={13} /> Tersimpan
-          </span>
-        )}
-        {s?.status === 'perbaikan' && (
-          <span className="text-[12px] font-semibold text-orange-500 flex items-center gap-1">
-            <RiAlertLine size={13} /> Perbaikan
-          </span>
-        )}
+
+        <div className="flex items-center gap-2 flex-shrink-0">
+          {s?.status === 'valid' && (
+            <span className="text-[12px] font-semibold text-success flex items-center gap-1">
+              <RiCheckLine size={13} /> Tersimpan
+            </span>
+          )}
+          {s?.status === 'perbaikan' && (
+            <span className="text-[12px] font-semibold text-orange-500 flex items-center gap-1">
+              <RiAlertLine size={13} /> Perbaikan
+            </span>
+          )}
+          {namaFile && s?.file_path && (
+            <a
+              href={storageUrl + '/' + s.file_path}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-3 py-1 text-[11px] font-semibold text-primary border border-primary rounded-sm hover:bg-primary-light transition-all"
+              onClick={function(e) { e.stopPropagation() }}
+            >
+              Buka
+            </a>
+          )}
+          <button
+            onClick={function() { if (!loading) ref.current.click() }}
+            disabled={loading}
+            className="px-3 py-1 text-[11px] font-semibold text-white bg-primary rounded-sm hover:bg-primary-dark transition-all disabled:opacity-60"
+          >
+            {namaFile ? 'Ubah' : 'Pilih File'}
+          </button>
+        </div>
       </div>
+
       {s?.catatan && (
         <div className="mt-3 flex items-start gap-2 bg-orange-100 border border-orange-200 rounded-xs px-3 py-2">
           <RiAlertLine size={13} className="text-orange-500 flex-shrink-0 mt-0.5" />
@@ -64,34 +105,43 @@ function DokItem({ dok, statusData, onUpload, loading }) {
           </p>
         </div>
       )}
-      <input ref={ref} type="file" accept=".jpg,.jpeg,.png,.pdf" className="hidden"
-        onChange={e => onUpload(dok.id, e.target.files[0])} />
+
+      <input
+        ref={ref}
+        type="file"
+        accept=".jpg,.jpeg,.png,.pdf"
+        className="hidden"
+        onChange={function(e) { onUpload(dok.id, e.target.files[0]) }}
+      />
     </div>
   )
 }
 
 function UploadDokumen() {
-  const navigate              = useNavigate()
-  const { user }              = useAuthStore()
+  const navigate = useNavigate()
+  const { user } = useAuthStore()
   const [statusData, setStatusData] = useState({})
-  const [loading, setLoading]       = useState(false)
+  const [loading, setLoading] = useState(false)
   const [loadingInit, setLoadingInit] = useState(true)
   const [successMsg, setSuccessMsg] = useState('')
-  const [errorMsg, setErrorMsg]     = useState('')
+  const [errorMsg, setErrorMsg] = useState('')
+  const [jalurKode, setJalurKode] = useState(null)
 
   useEffect(() => {
     pendaftarService.getStatus()
-      .then(res => {
-        const dokumen = res.data.pendaftaran?.dokumen || []
-        const mapped  = {}
-        dokumen.forEach(d => { mapped[d.jenis] = d })
+      .then(function(res) {
+        const p = res.data.pendaftaran
+        const dokumen = p?.dokumen || []
+        const mapped = {}
+        dokumen.forEach(function(d) { mapped[d.jenis] = d })
         setStatusData(mapped)
+        setJalurKode(p?.jalur?.kode || null)
       })
-      .catch(() => {})
-      .finally(() => setLoadingInit(false))
+      .catch(function() {})
+      .finally(function() { setLoadingInit(false) })
   }, [])
 
-  const handleUpload = async (jenis, file) => {
+  const handleUpload = async function(jenis, file) {
     if (!file) return
     setLoading(true)
     setErrorMsg('')
@@ -100,12 +150,14 @@ function UploadDokumen() {
       formData.append('jenis', jenis)
       formData.append('file', file)
       await pendaftarService.uploadDokumen(formData)
-      setStatusData(prev => ({
-        ...prev,
-        [jenis]: { ...prev[jenis], file_path: file.name, status: 'belum', catatan: null }
-      }))
+      setStatusData(function(prev) {
+        return {
+          ...prev,
+          [jenis]: { ...prev[jenis], file_path: file.name, nama_file: file.name, status: 'belum', catatan: null }
+        }
+      })
       setSuccessMsg('Dokumen berhasil diupload!')
-      setTimeout(() => setSuccessMsg(''), 3000)
+      setTimeout(function() { setSuccessMsg('') }, 3000)
     } catch (err) {
       setErrorMsg(err.response?.data?.message || 'Gagal upload dokumen')
     } finally {
@@ -113,7 +165,7 @@ function UploadDokumen() {
     }
   }
 
-  const handleKirim = async () => {
+  const handleKirim = async function() {
     setLoading(true)
     try {
       await pendaftarService.submit()
@@ -125,13 +177,20 @@ function UploadDokumen() {
     }
   }
 
-  const userObj = { name: user?.name || 'Pendaftar', avatarStyle: { background: 'rgba(37,99,235,.25)', color: '#93C5FD' } }
+  const userObj = {
+    name: user?.name || 'Pendaftar',
+    avatarStyle: { background: 'rgba(37,99,235,.25)', color: '#93C5FD' }
+  }
 
   if (loadingInit) return (
     <DashboardLayout role="pendaftar" user={userObj} activePath="/pendaftar/dokumen">
       <div className="flex justify-center py-20"><Spinner size="lg" /></div>
     </DashboardLayout>
   )
+
+  const dokumenOpsionalTampil = DOKUMEN_OPSIONAL.filter(function(dok) {
+    return (DOKUMEN_OPSIONAL_MAP[jalurKode] || []).includes(dok.id)
+  })
 
   return (
     <DashboardLayout role="pendaftar" user={userObj} activePath="/pendaftar/dokumen">
@@ -153,31 +212,42 @@ function UploadDokumen() {
         <div className="bg-white border border-n200 rounded-lg p-5 shadow-xs">
           <p className="text-[14px] font-bold font-poppins text-n800 mb-3">Dokumen Wajib</p>
           <div className="flex flex-col gap-3">
-            {DOKUMEN_WAJIB.map(dok => (
-              <DokItem key={dok.id} dok={dok} statusData={statusData} onUpload={handleUpload} loading={loading} />
-            ))}
+            {DOKUMEN_WAJIB.map(function(dok) {
+              return (
+                <DokItem key={dok.id} dok={dok} statusData={statusData} onUpload={handleUpload} loading={loading} />
+              )
+            })}
           </div>
         </div>
 
         <div className="bg-white border border-n200 rounded-lg p-5 shadow-xs">
           <p className="text-[14px] font-bold font-poppins text-n800 mb-1">
             Dokumen Opsional
-            <span className="text-[12px] font-normal text-n500 ml-1">(unggah sesuai jalur yang dipilih)</span>
+            <span className="text-[12px] font-normal text-n500 ml-1">(sesuai jalur yang dipilih)</span>
           </p>
           <div className="flex flex-col gap-3 mt-3">
-            {DOKUMEN_OPSIONAL.map(dok => (
-              <DokItem key={dok.id} dok={dok} statusData={statusData} onUpload={handleUpload} loading={loading} />
-            ))}
+            {dokumenOpsionalTampil.length === 0 ? (
+              <p className="text-[12px] text-n500">Tidak ada dokumen opsional untuk jalur ini.</p>
+            ) : (
+              dokumenOpsionalTampil.map(function(dok) {
+                return (
+                  <DokItem key={dok.id} dok={dok} statusData={statusData} onUpload={handleUpload} loading={loading} />
+                )
+              })
+            )}
           </div>
         </div>
       </div>
 
       <div className="flex justify-between">
-        <Button variant="ghost" onClick={() => navigate('/pendaftar/formulir')}>
+        <Button variant="ghost" onClick={function() { navigate('/pendaftar/formulir') }}>
           ← Kembali ke Formulir
         </Button>
         <Button onClick={handleKirim} disabled={loading}>
-          {loading ? <><Spinner size="sm" color="white" /> Memproses...</> : <><RiCheckLine size={14} /> Kirim Dokumen</>}
+          {loading
+            ? <><Spinner size="sm" color="white" /> Memproses...</>
+            : <><RiCheckLine size={14} /> Kirim Dokumen</>
+          }
         </Button>
       </div>
     </DashboardLayout>
