@@ -146,9 +146,15 @@ function DetailPendaftar() {
           <RiFileTextLine size={16} className="text-n400 flex-shrink-0" />
           <div>
             <p className="text-[10px] font-bold text-n400 uppercase tracking-wide">{dok.jenis}</p>
-            <p className="text-[12px] font-semibold text-primary cursor-pointer hover:underline">
+            <a
+              href={(import.meta.env.VITE_STORAGE_URL || 'http://127.0.0.1:8000/storage') + '/' + dok.file_path}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-[12px] font-semibold text-primary hover:underline"
+              onClick={function (e) { e.stopPropagation() }}
+            >
               {dok.nama_file || dok.file_path?.split('/').pop()}
-            </p>
+            </a>
           </div>
         </div>
         <div className="flex items-center gap-1.5 flex-shrink-0">
@@ -173,13 +179,15 @@ function DetailPendaftar() {
           </span>
         </div>
       </div>
-      {dok.catatan && (
-        <div className="mt-2 flex items-start gap-2 bg-orange-50 border border-orange-200 rounded-xs px-2 py-1.5">
-          <RiAlertLine size={12} className="text-orange-500 flex-shrink-0 mt-0.5" />
-          <p className="text-[11px] text-orange-800">{dok.catatan}</p>
-        </div>
-      )}
-    </div>
+      {
+        dok.catatan && (
+          <div className="mt-2 flex items-start gap-2 bg-orange-50 border border-orange-200 rounded-xs px-2 py-1.5">
+            <RiAlertLine size={12} className="text-orange-500 flex-shrink-0 mt-0.5" />
+            <p className="text-[11px] text-orange-800">{dok.catatan}</p>
+          </div>
+        )
+      }
+    </div >
   )
 
   return (
@@ -220,10 +228,10 @@ function DetailPendaftar() {
             <InfoRow label="NISN" value={data.data_diri?.nisn} />
             <InfoRow label="Jenis Kelamin" value={data.data_diri?.jenis_kelamin} />
             <InfoRow label="Tempat/Tgl Lahir" value={`${data.data_diri?.tempat_lahir}, ${data.data_diri?.tgl_lahir
-                ? new Date(data.data_diri.tgl_lahir).toLocaleDateString('id-ID', {
-                  day: 'numeric', month: 'long', year: 'numeric'
-                })
-                : '-'
+              ? new Date(data.data_diri.tgl_lahir).toLocaleDateString('id-ID', {
+                day: 'numeric', month: 'long', year: 'numeric'
+              })
+              : '-'
               }`} />
             <InfoRow label="Agama" value={data.data_diri?.agama} />
             <InfoRow label="Asal Sekolah" value={data.data_diri?.asal_sekolah} />
