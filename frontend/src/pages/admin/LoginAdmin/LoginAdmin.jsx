@@ -80,19 +80,6 @@ function LoginAdmin() {
         <div className="flex gap-2 mb-5">
           <button
             type="button"
-            onClick={() => setRole('admin')}
-            className={`
-              flex-1 flex items-center justify-center gap-2 py-2 rounded-sm
-              text-[12px] font-semibold border-[1.5px] transition-all duration-150
-              ${role === 'admin'
-                ? 'bg-warning-light text-warning border-amber-300'
-                : 'bg-white text-n500 border-n200 hover:bg-n50'}
-            `}
-          >
-            <RiUserSettingsLine size={14} /> Admin
-          </button>
-          <button
-            type="button"
             onClick={() => setRole('operator')}
             className={`
               flex-1 flex items-center justify-center gap-2 py-2 rounded-sm
@@ -103,6 +90,19 @@ function LoginAdmin() {
             `}
           >
             <RiShieldUserLine size={14} /> Operator
+          </button>
+          <button
+            type="button"
+            onClick={() => setRole('admin')}
+            className={`
+              flex-1 flex items-center justify-center gap-2 py-2 rounded-sm
+              text-[12px] font-semibold border-[1.5px] transition-all duration-150
+              ${role === 'admin'
+                ? 'bg-warning-light text-warning border-amber-300'
+                : 'bg-white text-n500 border-n200 hover:bg-n50'}
+            `}
+          >
+            <RiUserSettingsLine size={14} /> Admin
           </button>
         </div>
 
