@@ -4,7 +4,7 @@ Sistem Penerimaan Peserta Didik Baru berbasis web untuk SMP Negeri.
 
 ## Tech Stack
 - **Frontend**: React + Vite + Tailwind CSS v3
-- **Backend**: Laravel 12 + Sanctum + Spatie Permission
+- **Backend**: Laravel 12
 - **Database**: MySQL
 
 ## Struktur Project
