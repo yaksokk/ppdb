@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react'
-import { RiPrinterLine, RiDownloadLine, RiCheckLine, RiCloseLine, RiTrophyLine } from 'react-icons/ri'
-import { RiEmotionHappyLine, RiEmotionUnhappyLine } from 'react-icons/ri'
-import { Badge, Button, Spinner } from '../../../components/common'
+import { RiDownloadLine, RiCheckLine, RiCloseLine, RiTrophyLine,RiEmotionHappyLine, RiEmotionUnhappyLine  } from 'react-icons/ri'
+import { Button, Spinner } from '../../../components/common'
 import DashboardLayout from '../../../components/layout/DashboardLayout/DashboardLayout'
 import pendaftarService from '../../../services/pendaftar.service'
 import adminService from '../../../services/admin.service'
@@ -146,14 +145,9 @@ function HasilSeleksiPendaftar() {
         </p>
 
         {diterima && (
-          <div className="flex gap-2 justify-center">
-            <Button variant="success" onClick={() => window.print()}>
-              <RiPrinterLine size={14} /> Cetak Bukti Kelulusan
-            </Button>
-            <Button variant="ghost" onClick={handleDownloadPDF}>
-              <RiDownloadLine size={14} /> Download PDF
-            </Button>
-          </div>
+          <Button variant="success" onClick={handleDownloadPDF}>
+            <RiDownloadLine size={14} /> Cetak Bukti Kelulusan (PDF)
+          </Button>
         )}
 
         {!diterima && (
