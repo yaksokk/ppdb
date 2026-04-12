@@ -44,15 +44,15 @@ pnpm dev
 | Admin | admin@smpn1tumpaan.sch.id | Admin@1234 |
 
 ## Role User
-- **Admin** — kelola sistem, akun operator, info & jadwal, kriteria SAW
-- **Operator** — verifikasi dokumen, input nilai SAW, hasil seleksi
-- **Pendaftar** — daftar, isi formulir, upload dokumen, cek status & hasil
+- **Admin** - kelola sistem, akun operator, info & jadwal, kriteria SAW
+- **Operator** - verifikasi dokumen, input nilai SAW, hasil seleksi
+- **Pendaftar** - daftar, isi formulir, upload dokumen, cek status & hasil
 
 ## Fitur Utama
-- **Multi-role Access** — Admin, Operator, dan Pendaftar dengan hak akses berbeda (RBAC)
-- **Pendaftaran Online** — Isi formulir, upload dokumen, dan pantau status real-time
-- **Verifikasi Dokumen** — Operator bisa verifikasi, tolak, atau minta perbaikan dokumen
-- **Seleksi Otomatis (SAW)** — Ranking pendaftar menggunakan metode Simple Additive Weighting per jalur
-- **Export & Cetak** — Export hasil seleksi ke Excel dan download bukti kelulusan PDF
-- **Manajemen Konten** — Admin kelola jadwal, info sekolah, kuota, dan status PPDB
-- **Keamanan** — Token-based auth (Sanctum), session persist, auto logout
+- **Multi-role Access** - Admin, Operator, dan Pendaftar dengan hak akses berbeda (RBAC)
+- **Pendaftaran Online** - Isi formulir, upload dokumen, dan pantau status real-time
+- **Verifikasi Dokumen** - Operator bisa verifikasi, tolak, atau minta perbaikan dokumen
+- **Seleksi Otomatis (SAW)** - Ranking pendaftar menggunakan metode Simple Additive Weighting per jalur
+- **Export & Cetak** - Export hasil seleksi ke Excel dan download bukti kelulusan PDF
+- **Manajemen Konten** - Admin kelola jadwal, info sekolah, kuota, dan status PPDB
+- **Keamanan** - Token-based auth (Sanctum), session persist, auto logout
