@@ -10,14 +10,19 @@ use Illuminate\Http\Request;
 
 class OperatorController extends Controller
 {
+    /**
+     * O4: Hanya tampilkan pendaftar dengan status draft, menunggu, perbaikan.
+     * Terverifikasi sudah dipindah ke menu Seleksi SAW.
+     */
     public function listPendaftar(Request $request)
     {
-        $query = Pendaftaran::with(['dataDiri', 'jalur', 'dokumen', 'seleksi']);
+        $query = Pendaftaran::with(['dataDiri', 'jalur', 'dokumen', 'seleksi'])
+            ->whereIn('status', ['draft', 'menunggu', 'perbaikan']);
 
         if ($request->search) {
             $query->whereHas('dataDiri', function ($q) use ($request) {
                 $q->where('nama_lengkap', 'like', '%' . $request->search . '%')
-                ->orWhere('nisn', 'like', '%' . $request->search . '%');
+                  ->orWhere('nisn', 'like', '%' . $request->search . '%');
             });
         }
 
@@ -35,18 +40,65 @@ class OperatorController extends Controller
     public function detailPendaftar($id)
     {
         $pendaftaran = Pendaftaran::with([
-            'dataDiri', 'dataOrangTua', 'jalur', 'dokumen', 'seleksi', 'nilaiKriteria.kriteria'
+            'dataDiri', 'dataOrangTua', 'jalur', 'dokumen',
+            'seleksi', 'nilaiKriteria.kriteria', 'nilaiRapor',
         ])->findOrFail($id);
 
         return response()->json(['pendaftaran' => $pendaftaran]);
     }
 
+    /**
+     * O2: Tombol "Valid" → ubah status menjadi terverifikasi.
+     * Data otomatis pindah ke menu Seleksi SAW.
+     */
+    public function setValid(Request $request, $id)
+    {
+        $pendaftaran = Pendaftaran::findOrFail($id);
+        $pendaftaran->update(['status' => 'terverifikasi']);
+
+        return response()->json(['message' => 'Pendaftar berhasil diverifikasi dan dipindahkan ke Seleksi SAW']);
+    }
+
+    /**
+     * O2: Tombol "Kirim Perbaikan" → ubah status menjadi perbaikan.
+     * Pendaftar dapat re-upload dokumen.
+     */
+    public function kirimPerbaikan(Request $request, $id)
+    {
+        $pendaftaran = Pendaftaran::findOrFail($id);
+        $pendaftaran->update(['status' => 'perbaikan']);
+
+        return response()->json(['message' => 'Status berhasil diubah menjadi perbaikan']);
+    }
+
+    /**
+     * O3: Daftar pendaftar dengan status terverifikasi untuk menu Seleksi SAW.
+     */
+    public function listSeleksiSaw(Request $request)
+    {
+        $query = Pendaftaran::with(['dataDiri', 'jalur', 'dokumen', 'seleksi'])
+            ->where('status', 'terverifikasi');
+
+        if ($request->search) {
+            $query->whereHas('dataDiri', function ($q) use ($request) {
+                $q->where('nama_lengkap', 'like', '%' . $request->search . '%')
+                  ->orWhere('nisn', 'like', '%' . $request->search . '%');
+            });
+        }
+
+        if ($request->jalur_id) {
+            $query->where('jalur_id', $request->jalur_id);
+        }
+
+        return response()->json($query->paginate(10));
+    }
+
     public function inputNilai(Request $request, $pendaftaranId)
     {
         $request->validate([
-            'nilai' => 'required|array',
-            'nilai.*.kriteria_id' => 'required|exists:kriteria,id',
-            'nilai.*.nilai'       => 'required|numeric|min:0|max:100',
+            'nilai'                => 'required|array',
+            'nilai.*.kriteria_id'  => 'required|exists:kriteria,id',
+            'nilai.*.nilai'        => 'required|numeric|min:0|max:100',
         ]);
 
         foreach ($request->nilai as $item) {
@@ -64,8 +116,8 @@ class OperatorController extends Controller
 
     public function hasilSeleksi(Request $request)
     {
-$query = Pendaftaran::with(['dataDiri', 'jalur', 'dokumen', 'seleksi'])
-                    ->whereIn('status', ['diterima', 'ditolak']);
+        $query = Pendaftaran::with(['dataDiri', 'jalur', 'dokumen', 'seleksi'])
+                            ->whereIn('status', ['diterima', 'ditolak']);
 
         if ($request->status) {
             $statusLulus = $request->status === 'diterima' ? true : false;
@@ -101,7 +153,7 @@ $query = Pendaftaran::with(['dataDiri', 'jalur', 'dokumen', 'seleksi'])
 
         $pendaftaran = $seleksi->pendaftaran;
         $pendaftaran->update([
-            'status' => $request->status_lulus ? 'diterima' : 'ditolak'
+            'status' => $request->status_lulus ? 'diterima' : 'ditolak',
         ]);
 
         return response()->json(['message' => 'Hasil seleksi berhasil diupdate']);

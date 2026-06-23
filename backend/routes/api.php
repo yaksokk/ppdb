@@ -31,22 +31,25 @@ Route::get('/setting-publik', function () {
     $settings = \App\Models\Setting::whereIn('key', [
         'nama_sekolah', 'alamat', 'email', 'no_telepon',
         'tahun_ajaran', 'tgl_buka', 'tgl_tutup',
-        'tgl_verifikasi', 'tgl_pengumuman', 'tgl_daftar_ulang'
+        'tgl_verifikasi', 'tgl_pengumuman', 'tgl_daftar_ulang',
+        // P1: koordinat sekolah untuk kalkulasi jarak Haversine
+        'sekolah_lat', 'sekolah_lng',
     ])->get()->pluck('value', 'key');
     return response()->json(['settings' => $settings]);
 });
 
 Route::middleware(['auth:sanctum', 'role:pendaftar'])->prefix('pendaftar')->group(function () {
-    Route::post('/formulir',       [PendaftarController::class, 'submitFormulir']);
-    Route::put('/formulir',        [PendaftarController::class, 'submitFormulir']);
-    Route::post('/formulir/draft',  [PendaftarController::class, 'saveDraft']); 
-    Route::post('/dokumen',        [PendaftarController::class, 'uploadDokumen']);
-    Route::delete('/dokumen/{id}', [PendaftarController::class, 'hapusDokumen']);
-    Route::post('/submit',         [PendaftarController::class, 'submit']);
-    Route::get('/status',          [PendaftarController::class, 'status']);
-    Route::get('/hasil',           [PendaftarController::class, 'hasil']);
+    Route::post('/formulir',        [PendaftarController::class, 'submitFormulir']);
+    Route::put('/formulir',         [PendaftarController::class, 'submitFormulir']);
+    Route::post('/formulir/draft',  [PendaftarController::class, 'saveDraft']);
+    Route::post('/dokumen',         [PendaftarController::class, 'uploadDokumen']);
+    Route::delete('/dokumen/{id}',  [PendaftarController::class, 'hapusDokumen']);
+    Route::post('/submit',          [PendaftarController::class, 'submit']);
+    Route::get('/status',           [PendaftarController::class, 'status']);
+    Route::get('/hasil',            [PendaftarController::class, 'hasil']);
 });
 
+// Admin-only routes
 Route::middleware(['auth:sanctum', 'role:admin'])->prefix('admin')->group(function () {
     Route::get('/operator',          [AdminController::class, 'listOperator']);
     Route::post('/operator',         [AdminController::class, 'tambahOperator']);
@@ -58,24 +61,37 @@ Route::middleware(['auth:sanctum', 'role:admin'])->prefix('admin')->group(functi
     Route::get('/pendaftar-akun',              [AdminController::class, 'listPendaftarAkun']);
     Route::put('/pendaftar-akun/{id}/toggle',  [AdminController::class, 'toggleAktifPendaftar']);
     Route::delete('/pendaftar-akun/{id}',      [AdminController::class, 'hapusPendaftarAkun']);
+    // A2: Setting Kuota
+    Route::get('/kuota',             [AdminController::class, 'getKuota']);
+    Route::put('/kuota',             [AdminController::class, 'updateKuota']);
 });
 
+// Shared admin + operator routes
 Route::middleware(['auth:sanctum', 'role:admin|operator'])->group(function () {
-    Route::get('/admin/dashboard',                  [AdminController::class, 'dashboard']);
-    Route::get('/admin/pendaftar',                  [AdminController::class, 'listPendaftar']);
-    Route::get('/admin/pendaftar/{id}',             [AdminController::class, 'detailPendaftar']);
-    Route::put('/admin/pendaftar/{id}/status',      [AdminController::class, 'updateStatus']);
-    Route::put('/admin/dokumen/{id}/verifikasi',    [AdminController::class, 'verifikasiDokumen']);
+    Route::get('/admin/dashboard',               [AdminController::class, 'dashboard']);
+    Route::get('/admin/pendaftar',               [AdminController::class, 'listPendaftar']);
+    Route::get('/admin/pendaftar/{id}',          [AdminController::class, 'detailPendaftar']);
+    Route::put('/admin/pendaftar/{id}/status',   [AdminController::class, 'updateStatus']);
+    Route::put('/admin/dokumen/{id}/verifikasi', [AdminController::class, 'verifikasiDokumen']);
+    // A1: Seleksi SAW read-only untuk admin, dan akses bersama operator
+    Route::get('/admin/seleksi-saw',             [AdminController::class, 'listSeleksiSaw']);
 });
 
+// Operator-only routes
 Route::middleware(['auth:sanctum', 'role:operator'])->prefix('operator')->group(function () {
-    Route::get('/pendaftar',             [OperatorController::class, 'listPendaftar']);
-    Route::get('/pendaftar/{id}',        [OperatorController::class, 'detailPendaftar']);
-    Route::post('/pendaftar/{id}/nilai', [OperatorController::class, 'inputNilai']);
-    Route::get('/hasil-seleksi',         [OperatorController::class, 'hasilSeleksi']);
-    Route::put('/hasil-seleksi/{id}',    [OperatorController::class, 'updateHasil']);
+    Route::get('/pendaftar',               [OperatorController::class, 'listPendaftar']);
+    Route::get('/pendaftar/{id}',          [OperatorController::class, 'detailPendaftar']);
+    Route::post('/pendaftar/{id}/nilai',   [OperatorController::class, 'inputNilai']);
+    // O2: Tombol Valid dan Kirim Perbaikan
+    Route::put('/pendaftar/{id}/valid',    [OperatorController::class, 'setValid']);
+    Route::put('/pendaftar/{id}/perbaikan',[OperatorController::class, 'kirimPerbaikan']);
+    // O3: Daftar terverifikasi untuk Seleksi SAW
+    Route::get('/seleksi-saw',             [OperatorController::class, 'listSeleksiSaw']);
+    Route::get('/hasil-seleksi',           [OperatorController::class, 'hasilSeleksi']);
+    Route::put('/hasil-seleksi/{id}',      [OperatorController::class, 'updateHasil']);
 });
 
+// SAW — hanya operator yang bisa menghitung
 Route::middleware(['auth:sanctum', 'role:operator'])->prefix('saw')->group(function () {
     Route::post('/hitung', [SawController::class, 'hitung']);
     Route::get('/ranking', [SawController::class, 'getRanking']);
