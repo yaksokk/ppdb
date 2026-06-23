@@ -1,51 +1,61 @@
 import { useNavigate } from 'react-router-dom'
 import { useState } from 'react'
-import { RiArrowDownSLine, RiArrowUpSLine, RiSchoolLine, RiDashboardLine, RiGroupLine, RiScales2Line, RiFileList3Line, RiUploadCloud2Line, RiTrophyLine, RiInformationLine, RiLogoutBoxRLine, RiUserSettingsLine } from 'react-icons/ri'
+import {
+  RiArrowDownSLine, RiArrowUpSLine, RiSchoolLine, RiDashboardLine,
+  RiGroupLine, RiScales2Line, RiFileList3Line, RiUploadCloud2Line,
+  RiTrophyLine, RiInformationLine, RiLogoutBoxRLine, RiUserSettingsLine,
+  RiFilterLine, RiPieChartLine,
+} from 'react-icons/ri'
 import { Avatar } from '../../common'
 import authService from '../../../services/auth.service'
 import useAuthStore from '../../../store/authStore'
 
 const NAV_CONFIG = {
   admin: [
-    { icon: RiDashboardLine, label: 'Dashboard', path: '/admin/dashboard' },
-    { icon: RiGroupLine, label: 'Data Pendaftar', path: '/admin/pendaftar' },
+    { icon: RiDashboardLine,   label: 'Dashboard',     path: '/admin/dashboard' },
+    { icon: RiGroupLine,       label: 'Data Pendaftar', path: '/admin/pendaftar' },
+    // A1: Menu Seleksi SAW (read-only)
+    { icon: RiFilterLine,      label: 'Seleksi SAW',   path: '/admin/seleksi-saw' },
     {
       icon: RiUserSettingsLine, label: 'Kelola Akun', path: null, dropdown: [
-        { label: 'Operator', path: '/admin/operator' },
+        { label: 'Operator',  path: '/admin/operator' },
         { label: 'Pendaftar', path: '/admin/pendaftar-akun' },
       ]
     },
-    { icon: RiInformationLine, label: 'Kelola Info', path: '/admin/pengumuman' },
-    { icon: RiScales2Line, label: 'Kriteria SAW', path: '/admin/kriteria' },
+    { icon: RiInformationLine, label: 'Kelola Info',   path: '/admin/pengumuman' },
+    // A2: Setting Kuota
+    { icon: RiPieChartLine,    label: 'Setting Kuota', path: '/admin/kuota' },
+    { icon: RiScales2Line,     label: 'Kriteria SAW',  path: '/admin/kriteria' },
   ],
   operator: [
-    { icon: RiDashboardLine, label: 'Dashboard', path: '/operator/dashboard' },
-    { icon: RiGroupLine, label: 'Data Pendaftar', path: '/admin/pendaftar' },
-    { icon: RiTrophyLine, label: 'Hasil Seleksi', path: '/admin/seleksi' },
+    { icon: RiDashboardLine,   label: 'Dashboard',     path: '/operator/dashboard' },
+    { icon: RiGroupLine,       label: 'Data Pendaftar', path: '/admin/pendaftar' },
+    // O3: Menu Seleksi SAW (dengan Hitung SAW)
+    { icon: RiFilterLine,      label: 'Seleksi SAW',   path: '/admin/seleksi-saw' },
+    { icon: RiTrophyLine,      label: 'Hasil Seleksi', path: '/admin/seleksi' },
   ],
   pendaftar: [
-    { icon: RiDashboardLine, label: 'Dashboard', path: '/pendaftar/dashboard' },
-    { icon: RiFileList3Line, label: 'Formulir', path: '/pendaftar/formulir' },
+    { icon: RiDashboardLine,    label: 'Dashboard',      path: '/pendaftar/dashboard' },
+    { icon: RiFileList3Line,    label: 'Formulir',       path: '/pendaftar/formulir' },
     { icon: RiUploadCloud2Line, label: 'Upload Dokumen', path: '/pendaftar/dokumen' },
-    { icon: RiTrophyLine, label: 'Hasil Seleksi', path: '/pendaftar/hasil' },
+    { icon: RiTrophyLine,       label: 'Hasil Seleksi',  path: '/pendaftar/hasil' },
   ],
 }
 
 const ROLE_BADGE = {
-  admin: { label: 'Administrator', cls: 'bg-amber-500/20 text-amber-300 border border-amber-500/25' },
-  operator: { label: 'Operator PPDB', cls: 'bg-success/20 text-green-300 border border-success/25' },
-  pendaftar: { label: 'Pendaftar', cls: 'bg-primary/25 text-blue-300 border border-primary/30' },
+  admin:     { label: 'Administrator',  cls: 'bg-amber-500/20 text-amber-300 border border-amber-500/25' },
+  operator:  { label: 'Operator PPDB',  cls: 'bg-success/20 text-green-300 border border-success/25' },
+  pendaftar: { label: 'Pendaftar',      cls: 'bg-primary/25 text-blue-300 border border-primary/30' },
 }
 
 function Sidebar({ role = 'admin', user = {}, activePath = '', onLogout }) {
   const navigate = useNavigate()
   const { clearAuth } = useAuthStore()
-  const nav = NAV_CONFIG[role] || []
+  const nav   = NAV_CONFIG[role] || []
   const badge = ROLE_BADGE[role]
   const [dropdownOpen, setDropdownOpen] = useState(
     activePath === '/admin/operator' || activePath === '/admin/pendaftar-akun'
   )
-
 
   const handleLogout = async () => {
     try {
@@ -89,20 +99,18 @@ function Sidebar({ role = 'admin', user = {}, activePath = '', onLogout }) {
                 <div
                   onClick={() => setDropdownOpen(!dropdownOpen)}
                   className={`
-            flex items-center justify-between px-2.5 py-2 mx-2 rounded-sm
-            text-[12.5px] font-medium cursor-pointer transition-all duration-150
-            ${item.dropdown.some(d => d.path === activePath)
+                    flex items-center justify-between px-2.5 py-2 mx-2 rounded-sm
+                    text-[12.5px] font-medium cursor-pointer transition-all duration-150
+                    ${item.dropdown.some(d => d.path === activePath)
                       ? 'bg-white/12 text-white font-semibold'
                       : 'text-white/60 hover:bg-white/7 hover:text-white/90'}
-          `}
+                  `}
                 >
                   <div className="flex items-center gap-2">
                     <Icon size={14} className="flex-shrink-0" />
                     {item.label}
                   </div>
-                  {dropdownOpen
-                    ? <RiArrowUpSLine size={14} />
-                    : <RiArrowDownSLine size={14} />}
+                  {dropdownOpen ? <RiArrowUpSLine size={14} /> : <RiArrowDownSLine size={14} />}
                 </div>
 
                 {dropdownOpen && (
@@ -112,12 +120,12 @@ function Sidebar({ role = 'admin', user = {}, activePath = '', onLogout }) {
                         key={sub.path}
                         onClick={() => navigate(sub.path)}
                         className={`
-                  flex items-center gap-2 px-2.5 py-1.5 mx-2 rounded-sm
-                  text-[12px] cursor-pointer transition-all duration-150
-                  ${activePath === sub.path
+                          flex items-center gap-2 px-2.5 py-1.5 mx-2 rounded-sm
+                          text-[12px] cursor-pointer transition-all duration-150
+                          ${activePath === sub.path
                             ? 'bg-white/12 text-white font-semibold'
                             : 'text-white/50 hover:bg-white/7 hover:text-white/90'}
-                `}
+                        `}
                       >
                         <div className="w-1 h-1 rounded-full bg-current flex-shrink-0" />
                         {sub.label}
@@ -134,12 +142,12 @@ function Sidebar({ role = 'admin', user = {}, activePath = '', onLogout }) {
               key={item.path}
               onClick={() => navigate(item.path)}
               className={`
-        flex items-center gap-2 px-2.5 py-2 mx-2 rounded-sm
-        text-[12.5px] font-medium cursor-pointer transition-all duration-150
-        ${activePath === item.path
+                flex items-center gap-2 px-2.5 py-2 mx-2 rounded-sm
+                text-[12.5px] font-medium cursor-pointer transition-all duration-150
+                ${activePath === item.path
                   ? 'bg-white/12 text-white font-semibold'
                   : 'text-white/60 hover:bg-white/7 hover:text-white/90'}
-      `}
+              `}
             >
               <Icon size={14} className="flex-shrink-0" />
               {item.label}

@@ -10,6 +10,9 @@ use Illuminate\Http\Request;
 
 class SawController extends Controller
 {
+    /**
+     * O3: Hitung SAW hanya untuk pendaftar berstatus terverifikasi.
+     */
     public function hitung(Request $request)
     {
         $request->validate([
@@ -25,33 +28,35 @@ class SawController extends Controller
 
         $pendaftaran = Pendaftaran::with('nilaiKriteria')
             ->where('jalur_id', $jalurId)
-            ->whereIn('status', ['menunggu', 'perbaikan', 'diterima', 'ditolak'])
+            ->where('status', 'terverifikasi')
             ->get();
 
         if ($pendaftaran->isEmpty()) {
-            return response()->json(['message' => 'Tidak ada pendaftar untuk jalur ini'], 404);
+            return response()->json(['message' => 'Tidak ada pendaftar terverifikasi untuk jalur ini'], 404);
         }
 
+        // Bangun matriks nilai
         $nilaiMatrix = [];
         foreach ($pendaftaran as $p) {
             foreach ($kriteria as $k) {
                 $nilai = $p->nilaiKriteria->where('kriteria_id', $k->id)->first();
-                $nilaiMatrix[$p->id][$k->id] = $nilai ? (float)$nilai->nilai : 0;
+                $nilaiMatrix[$p->id][$k->id] = $nilai ? (float) $nilai->nilai : 0;
             }
         }
 
+        // Normalisasi SAW
         $nilaiNormalisasi = [];
         foreach ($kriteria as $k) {
-            $nilaiKolom = [];
+            $nilaiKolom = array_column(array_column($pendaftaran->toArray(), null, 'id'), null);
+            $kolom = [];
             foreach ($pendaftaran as $p) {
-                $nilaiKolom[] = $nilaiMatrix[$p->id][$k->id];
+                $kolom[] = $nilaiMatrix[$p->id][$k->id];
             }
 
             if ($k->jenis === 'benefit') {
-                $best = max($nilaiKolom);
+                $best = max($kolom) ?: 1;
             } else {
-                $best = min($nilaiKolom);
-                $best = $best == 0 ? 1 : $best;
+                $best = min($kolom) ?: 1;
             }
 
             foreach ($pendaftaran as $p) {
@@ -64,11 +69,12 @@ class SawController extends Controller
             }
         }
 
+        // Hitung skor akhir
         $skorAkhir = [];
         foreach ($pendaftaran as $p) {
             $skor = 0;
             foreach ($kriteria as $k) {
-                $bobot = (float)$k->bobot / 100;
+                $bobot = (float) $k->bobot / 100;
                 $skor += $bobot * $nilaiNormalisasi[$p->id][$k->id];
             }
             $skorAkhir[$p->id] = round($skor, 4);
@@ -82,9 +88,9 @@ class SawController extends Controller
             Seleksi::updateOrCreate(
                 ['pendaftaran_id' => $pendaftaranId],
                 [
-                    'skor_saw'    => $skor,
-                    'ranking'     => $ranking,
-                    'input_by'    => $request->user()->id,
+                    'skor_saw' => $skor,
+                    'ranking'  => $ranking,
+                    'input_by' => $request->user()->id,
                 ]
             );
 

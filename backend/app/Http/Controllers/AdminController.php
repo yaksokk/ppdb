@@ -8,6 +8,7 @@ use App\Models\Dokumen;
 use App\Models\Setting;
 use App\Models\LogAktivitas;
 use App\Models\Seleksi;
+use App\Models\JalurMasuk;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 
@@ -15,12 +16,13 @@ class AdminController extends Controller
 {
     public function dashboard(Request $request)
     {
-        $total     = Pendaftaran::count();
-        $diterima  = Pendaftaran::where('status', 'diterima')->count();
-        $menunggu  = Pendaftaran::where('status', 'menunggu')->count();
-        $perbaikan = Pendaftaran::where('status', 'perbaikan')->count();
-        $ditolak   = Pendaftaran::where('status', 'ditolak')->count();
-        $operator  = User::role('operator')->count();
+        $total        = Pendaftaran::count();
+        $diterima     = Pendaftaran::where('status', 'diterima')->count();
+        $menunggu     = Pendaftaran::where('status', 'menunggu')->count();
+        $perbaikan    = Pendaftaran::where('status', 'perbaikan')->count();
+        $ditolak      = Pendaftaran::where('status', 'ditolak')->count();
+        $terverifikasi = Pendaftaran::where('status', 'terverifikasi')->count();
+        $operator     = User::role('operator')->count();
 
         $perJalur = Pendaftaran::with('jalur')
             ->selectRaw('jalur_id, count(*) as total')
@@ -32,7 +34,7 @@ class AdminController extends Controller
             ]);
 
         $statusVerifikasi = [
-            ['name' => 'Terverifikasi',   'value' => $diterima],
+            ['name' => 'Terverifikasi',   'value' => $terverifikasi],
             ['name' => 'Belum Periksa',   'value' => $menunggu],
             ['name' => 'Perlu Perbaikan', 'value' => $perbaikan],
         ];
@@ -43,20 +45,27 @@ class AdminController extends Controller
             'menunggu'          => $menunggu,
             'perbaikan'         => $perbaikan,
             'ditolak'           => $ditolak,
+            'terverifikasi'     => $terverifikasi,
             'operator'          => $operator,
             'per_jalur'         => $perJalur,
             'status_verifikasi' => $statusVerifikasi,
         ]);
     }
 
+    /**
+     * A1: Sinkronisasi dengan O4 — hanya tampilkan draft, menunggu, perbaikan.
+     */
     public function listPendaftar(Request $request)
     {
-        $query = Pendaftaran::with(['dataDiri', 'jalur', 'dokumen', 'seleksi']);
+        $query = Pendaftaran::with(['dataDiri', 'jalur', 'dokumen', 'seleksi'])
+            ->whereIn('status', ['draft', 'menunggu', 'perbaikan']);
 
         if ($request->search) {
-            $query->whereHas('dataDiri', function ($q) use ($request) {
-                $q->where('nama_lengkap', 'like', '%' . $request->search . '%');
-            })->orWhere('no_pendaftaran', 'like', '%' . $request->search . '%');
+            $query->where(function ($q) use ($request) {
+                $q->whereHas('dataDiri', function ($sq) use ($request) {
+                    $sq->where('nama_lengkap', 'like', '%' . $request->search . '%');
+                })->orWhere('no_pendaftaran', 'like', '%' . $request->search . '%');
+            });
         }
 
         if ($request->status) {
@@ -67,24 +76,45 @@ class AdminController extends Controller
             $query->where('jalur_id', $request->jalur_id);
         }
 
-        $pendaftar = $query->paginate(10);
-
-        return response()->json($pendaftar);
+        return response()->json($query->paginate(10));
     }
 
     public function detailPendaftar($id)
     {
         $pendaftaran = Pendaftaran::with([
-            'dataDiri', 'dataOrangTua', 'jalur', 'dokumen', 'seleksi'
+            'dataDiri', 'dataOrangTua', 'jalur', 'dokumen',
+            'seleksi', 'nilaiKriteria.kriteria', 'nilaiRapor',
         ])->findOrFail($id);
 
         return response()->json(['pendaftaran' => $pendaftaran]);
     }
 
+    /**
+     * A1: Daftar terverifikasi (read-only untuk admin).
+     */
+    public function listSeleksiSaw(Request $request)
+    {
+        $query = Pendaftaran::with(['dataDiri', 'jalur', 'dokumen', 'seleksi'])
+            ->where('status', 'terverifikasi');
+
+        if ($request->search) {
+            $query->whereHas('dataDiri', function ($q) use ($request) {
+                $q->where('nama_lengkap', 'like', '%' . $request->search . '%')
+                  ->orWhere('nisn', 'like', '%' . $request->search . '%');
+            });
+        }
+
+        if ($request->jalur_id) {
+            $query->where('jalur_id', $request->jalur_id);
+        }
+
+        return response()->json($query->paginate(10));
+    }
+
     public function updateStatus(Request $request, $id)
     {
         $request->validate([
-            'status' => 'required|in:draft,menunggu,perbaikan,diterima,ditolak',
+            'status' => 'required|in:draft,menunggu,perbaikan,terverifikasi,diterima,ditolak',
         ]);
 
         $pendaftaran = Pendaftaran::findOrFail($id);
@@ -123,6 +153,79 @@ class AdminController extends Controller
         $this->log($request, 'verifikasi_dokumen', 'dokumen', $id, 'Verifikasi dokumen: ' . $request->status);
 
         return response()->json(['message' => 'Dokumen berhasil diverifikasi']);
+    }
+
+    /**
+     * A2: Kelola kuota per jalur.
+     */
+    public function getKuota()
+    {
+        $keys = [
+            'kuota_total', 'kuota_persen_zonasi',
+            'kuota_persen_prestasi', 'kuota_persen_afirmasi',
+            'kuota_persen_mutasi',
+        ];
+        $settings = Setting::whereIn('key', $keys)->get()->pluck('value', 'key');
+        $jalur    = JalurMasuk::all(['id', 'kode', 'nama', 'kuota']);
+
+        return response()->json([
+            'settings' => $settings,
+            'jalur'    => $jalur,
+        ]);
+    }
+
+    public function updateKuota(Request $request)
+    {
+        $request->validate([
+            'kuota_total'           => 'required|integer|min:1',
+            'kuota_persen_zonasi'   => 'required|numeric|min:0|max:100',
+            'kuota_persen_prestasi' => 'required|numeric|min:0|max:100',
+            'kuota_persen_afirmasi' => 'required|numeric|min:0|max:100',
+            'kuota_persen_mutasi'   => 'required|numeric|min:0|max:100',
+        ]);
+
+        $totalPersen = (float) $request->kuota_persen_zonasi
+                     + (float) $request->kuota_persen_prestasi
+                     + (float) $request->kuota_persen_afirmasi
+                     + (float) $request->kuota_persen_mutasi;
+
+        if (abs($totalPersen - 100) > 0.01) {
+            return response()->json(['message' => 'Total persentase harus 100%'], 422);
+        }
+
+        $kuotaTotal = (int) $request->kuota_total;
+        $userId     = $request->user()->id;
+
+        $settingKeys = [
+            'kuota_total'           => $kuotaTotal,
+            'kuota_persen_zonasi'   => $request->kuota_persen_zonasi,
+            'kuota_persen_prestasi' => $request->kuota_persen_prestasi,
+            'kuota_persen_afirmasi' => $request->kuota_persen_afirmasi,
+            'kuota_persen_mutasi'   => $request->kuota_persen_mutasi,
+        ];
+
+        foreach ($settingKeys as $key => $value) {
+            Setting::updateOrCreate(
+                ['key' => $key],
+                ['value' => $value, 'updated_by' => $userId]
+            );
+        }
+
+        // Auto-update kuota di tabel jalur_masuk
+        $jalurMap = [
+            'zonasi'   => (int) round($kuotaTotal * $request->kuota_persen_zonasi   / 100),
+            'prestasi' => (int) round($kuotaTotal * $request->kuota_persen_prestasi / 100),
+            'afirmasi' => (int) round($kuotaTotal * $request->kuota_persen_afirmasi / 100),
+            'mutasi'   => (int) round($kuotaTotal * $request->kuota_persen_mutasi   / 100),
+        ];
+
+        foreach ($jalurMap as $kode => $kuota) {
+            JalurMasuk::where('kode', $kode)->update(['kuota' => $kuota]);
+        }
+
+        $this->log($request, 'update_kuota', 'setting', null, 'Update kuota total: ' . $kuotaTotal);
+
+        return response()->json(['message' => 'Kuota berhasil diperbarui']);
     }
 
     public function listOperator()
@@ -198,18 +301,6 @@ class AdminController extends Controller
         return response()->json($logs);
     }
 
-    private function log(Request $request, $aksi, $entity, $entityId, $deskripsi)
-    {
-        LogAktivitas::create([
-            'user_id'    => $request->user()->id,
-            'aksi'       => $aksi,
-            'entity'     => $entity,
-            'entity_id'  => $entityId,
-            'deskripsi'  => $deskripsi,
-            'ip_address' => $request->ip(),
-        ]);
-    }
-
     public function listPendaftarAkun(Request $request)
     {
         $query = User::role('pendaftar')
@@ -219,7 +310,7 @@ class AdminController extends Controller
         if ($request->search) {
             $query->where(function ($q) use ($request) {
                 $q->where('name', 'like', '%' . $request->search . '%')
-                ->orWhere('email', 'like', '%' . $request->search . '%');
+                  ->orWhere('email', 'like', '%' . $request->search . '%');
             });
         }
 
@@ -243,5 +334,17 @@ class AdminController extends Controller
         $user->delete();
 
         return response()->json(['message' => 'Akun pendaftar berhasil dihapus']);
+    }
+
+    private function log(Request $request, $aksi, $entity, $entityId, $deskripsi)
+    {
+        LogAktivitas::create([
+            'user_id'    => $request->user()->id,
+            'aksi'       => $aksi,
+            'entity'     => $entity,
+            'entity_id'  => $entityId,
+            'deskripsi'  => $deskripsi,
+            'ip_address' => $request->ip(),
+        ]);
     }
 }

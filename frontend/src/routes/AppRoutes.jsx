@@ -18,6 +18,8 @@ import KelolaPendaftar from '../pages/admin/KelolaPendaftar/KelolaPendaftar'
 import UploadDokumen from '../pages/pendaftar/UploadDokumen/UploadDokumen'
 import HasilSeleksiPendaftar from '../pages/pendaftar/HasilSeleksi/HasilSeleksi'
 import Beranda from '../pages/public/Beranda/Beranda'
+import SeleksiSaw from '../pages/admin/SeleksiSaw/SeleksiSaw'
+import SettingKuota from '../pages/admin/SettingKuota/SettingKuota'
 
 function AppRoutes() {
   return (
@@ -39,6 +41,12 @@ function AppRoutes() {
       <Route path="/admin/pendaftar/:id" element={
         <PrivateRoute><RoleRoute allowedRoles={['admin', 'operator']}><DetailPendaftar /></RoleRoute></PrivateRoute>
       } />
+
+      {/* O3/A1: Menu Seleksi SAW */}
+      <Route path="/admin/seleksi-saw" element={
+        <PrivateRoute><RoleRoute allowedRoles={['admin', 'operator']}><SeleksiSaw /></RoleRoute></PrivateRoute>
+      } />
+
       <Route path="/admin/seleksi" element={
         <PrivateRoute><RoleRoute allowedRoles={['operator']}><HasilSeleksi /></RoleRoute></PrivateRoute>
       } />
@@ -50,6 +58,11 @@ function AppRoutes() {
       } />
       <Route path="/admin/kriteria" element={
         <PrivateRoute><RoleRoute allowedRoles={['admin']}><KriteriaSAW /></RoleRoute></PrivateRoute>
+      } />
+
+      {/* A2: Setting Kuota */}
+      <Route path="/admin/kuota" element={
+        <PrivateRoute><RoleRoute allowedRoles={['admin']}><SettingKuota /></RoleRoute></PrivateRoute>
       } />
 
       <Route path="/operator/dashboard" element={
