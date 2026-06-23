@@ -11,7 +11,7 @@ const pendaftarService = {
   getStatus:      ()         => api.get('/pendaftar/status'),
   getHasil:       ()         => api.get('/pendaftar/hasil'),
   cekStatus:      (noDaftar) => api.get(`/cek-status/${noDaftar}`),
-  saveDraft: (data) => api.post('/pendaftar/formulir/draft', data),
+  saveDraft:      (data)     => api.post('/pendaftar/formulir/draft', data),
 }
 
 export default pendaftarService

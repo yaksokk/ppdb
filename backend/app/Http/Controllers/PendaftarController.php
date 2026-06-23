@@ -336,6 +336,7 @@ class PendaftarController extends Controller
             ]
         );
 
+
         if ($request->filled('nama_lengkap') || $request->filled('nisn') || $request->filled('provinsi')) {
             DataDiri::updateOrCreate(
                 ['pendaftaran_id' => $pendaftaran->id],

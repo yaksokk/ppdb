@@ -26,11 +26,27 @@ const DOKUMEN_OPSIONAL_MAP = {
   zonasi:   [],
 }
 
-function DokItem({ dok, statusData, onUpload, loading }) {
-  const ref = useRef()
+// P3: Opsi sub-kategori per jalur
+const SUB_KATEGORI_OPTIONS = {
+  prestasi: ['Internasional', 'Nasional', 'Provinsi', 'Kabupaten/Kota', 'Kecamatan'],
+  afirmasi: ['KIP', 'PKH', 'BPNT', 'Disabilitas'],
+  mutasi:   ['TNI/Polri', 'ASN', 'BUMN/BKUMN', 'Swasta'],
+  zonasi:   [],
+}
+
+// P3: Deskripsi konversi nilai per sub-kategori
+const SUB_KATEGORI_SKOR = {
+  prestasi: { Internasional: 100, Nasional: 85, Provinsi: 70, 'Kabupaten/Kota': 55, Kecamatan: 40 },
+  afirmasi: { KIP: 10, PKH: 20, BPNT: 30, Disabilitas: 40 },
+  mutasi:   {},
+}
+
+function DokItem({ dok, statusData, onUpload, loading, subKategoriOptions = [], subKategori = '', onSubKategoriChange }) {
+  const ref  = useRef()
   const Icon = dok.icon
-  const s = statusData[dok.id]
-  const namaFile = s?.nama_file || s?.file_path?.split('/').pop() || null
+  const s    = statusData[dok.id]
+  const namaFile   = s?.nama_file || s?.file_path?.split('/').pop() || null
+  const storageUrl = import.meta.env.VITE_STORAGE_URL || 'http://localhost/storage'
 
   const bgClass = s?.status === 'valid'
     ? 'border-green-200 bg-success-light'
@@ -38,19 +54,14 @@ function DokItem({ dok, statusData, onUpload, loading }) {
     ? 'border-orange-200 bg-orange-50'
     : 'border-dashed border-n300 bg-white'
 
-  const storageUrl = import.meta.env.VITE_STORAGE_URL || 'http://localhost/storage'
-
   return (
     <div className={'border-2 rounded-md p-4 transition-all duration-150 ' + bgClass}>
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Icon
-            size={20}
-            className={'flex-shrink-0 ' + (
-              s?.status === 'valid' ? 'text-success' :
-              s?.status === 'perbaikan' ? 'text-orange-500' : 'text-n400'
-            )}
-          />
+          <Icon size={20} className={'flex-shrink-0 ' + (
+            s?.status === 'valid' ? 'text-success' :
+            s?.status === 'perbaikan' ? 'text-orange-500' : 'text-n400'
+          )} />
           <div>
             <p className="text-[13px] font-semibold text-n800">
               {dok.nama}
@@ -97,6 +108,30 @@ function DokItem({ dok, statusData, onUpload, loading }) {
         </div>
       </div>
 
+      {/* P3: Dropdown sub-kategori untuk dokumen opsional */}
+      {subKategoriOptions.length > 0 && (
+        <div className="mt-3">
+          <label className="block text-[11px] font-bold text-n600 uppercase tracking-wide mb-1.5">
+            Sub-Kategori Dokumen <span className="text-danger">*</span>
+          </label>
+          <select
+            value={subKategori}
+            onChange={e => onSubKategoriChange && onSubKategoriChange(dok.id, e.target.value)}
+            className="w-full px-3 py-[9px] text-[13px] text-n800 border-[1.5px] border-n200 rounded-sm bg-white outline-none transition-all cursor-pointer focus:border-primary"
+          >
+            <option value="">-- Pilih Sub-Kategori --</option>
+            {subKategoriOptions.map(opt => (
+              <option key={opt} value={opt}>{opt}</option>
+            ))}
+          </select>
+          {subKategori && SUB_KATEGORI_SKOR[dok.jalurKode]?.[subKategori] !== undefined && (
+            <p className="mt-1 text-[11px] text-success font-semibold">
+              Nilai kriteria otomatis: {SUB_KATEGORI_SKOR[dok.jalurKode][subKategori]}
+            </p>
+          )}
+        </div>
+      )}
+
       {s?.catatan && (
         <div className="mt-3 flex items-start gap-2 bg-orange-100 border border-orange-200 rounded-xs px-3 py-2">
           <RiAlertLine size={13} className="text-orange-500 flex-shrink-0 mt-0.5" />
@@ -111,7 +146,7 @@ function DokItem({ dok, statusData, onUpload, loading }) {
         type="file"
         accept=".jpg,.jpeg,.png,.pdf"
         className="hidden"
-        onChange={function(e) { onUpload(dok.id, e.target.files[0]) }}
+        onChange={function(e) { onUpload(dok.id, e.target.files[0], subKategori || null) }}
       />
     </div>
   )
@@ -120,28 +155,38 @@ function DokItem({ dok, statusData, onUpload, loading }) {
 function UploadDokumen() {
   const navigate = useNavigate()
   const { user } = useAuthStore()
-  const [statusData, setStatusData] = useState({})
-  const [loading, setLoading] = useState(false)
-  const [loadingInit, setLoadingInit] = useState(true)
-  const [successMsg, setSuccessMsg] = useState('')
-  const [errorMsg, setErrorMsg] = useState('')
-  const [jalurKode, setJalurKode] = useState(null)
+  const [statusData,    setStatusData]    = useState({})
+  const [loading,       setLoading]       = useState(false)
+  const [loadingInit,   setLoadingInit]   = useState(true)
+  const [successMsg,    setSuccessMsg]    = useState('')
+  const [errorMsg,      setErrorMsg]      = useState('')
+  const [jalurKode,     setJalurKode]     = useState(null)
+  // P3: sub-kategori per jenis dokumen
+  const [subKategoriMap, setSubKategoriMap] = useState({})
 
   useEffect(() => {
     pendaftarService.getStatus()
       .then(function(res) {
-        const p = res.data.pendaftaran
+        const p       = res.data.pendaftaran
         const dokumen = p?.dokumen || []
-        const mapped = {}
+        const mapped  = {}
         dokumen.forEach(function(d) { mapped[d.jenis] = d })
         setStatusData(mapped)
         setJalurKode(p?.jalur?.kode || null)
+
+        // Pre-fill sub-kategori dari dokumen yang sudah ada
+        const subMap = {}
+        dokumen.forEach(function(d) {
+          if (d.sub_kategori) subMap[d.jenis] = d.sub_kategori
+        })
+        setSubKategoriMap(subMap)
       })
       .catch(function() {})
       .finally(function() { setLoadingInit(false) })
   }, [])
 
-  const handleUpload = async function(jenis, file) {
+  // P3: handler upload dengan sub_kategori
+  const handleUpload = async function(jenis, file, subKategori = null) {
     if (!file) return
     setLoading(true)
     setErrorMsg('')
@@ -149,11 +194,12 @@ function UploadDokumen() {
       const formData = new FormData()
       formData.append('jenis', jenis)
       formData.append('file', file)
+      if (subKategori) formData.append('sub_kategori', subKategori)
       await pendaftarService.uploadDokumen(formData)
       setStatusData(function(prev) {
         return {
           ...prev,
-          [jenis]: { ...prev[jenis], file_path: file.name, nama_file: file.name, status: 'belum', catatan: null }
+          [jenis]: { ...prev[jenis], file_path: file.name, nama_file: file.name, status: 'belum', catatan: null, sub_kategori: subKategori }
         }
       })
       setSuccessMsg('Dokumen berhasil diupload!')
@@ -163,6 +209,10 @@ function UploadDokumen() {
     } finally {
       setLoading(false)
     }
+  }
+
+  const handleSubKategoriChange = function(jenis, value) {
+    setSubKategoriMap(prev => ({ ...prev, [jenis]: value }))
   }
 
   const handleKirim = async function() {
@@ -192,6 +242,9 @@ function UploadDokumen() {
     return (DOKUMEN_OPSIONAL_MAP[jalurKode] || []).includes(dok.id)
   })
 
+  // Tambah jalurKode ke tiap dok opsional untuk referensi skor
+  const opsionalWithJalur = dokumenOpsionalTampil.map(dok => ({ ...dok, jalurKode }))
+
   return (
     <DashboardLayout role="pendaftar" user={userObj} activePath="/pendaftar/dokumen">
       <div className="mb-4">
@@ -214,7 +267,13 @@ function UploadDokumen() {
           <div className="flex flex-col gap-3">
             {DOKUMEN_WAJIB.map(function(dok) {
               return (
-                <DokItem key={dok.id} dok={dok} statusData={statusData} onUpload={handleUpload} loading={loading} />
+                <DokItem
+                  key={dok.id}
+                  dok={dok}
+                  statusData={statusData}
+                  onUpload={handleUpload}
+                  loading={loading}
+                />
               )
             })}
           </div>
@@ -225,13 +284,28 @@ function UploadDokumen() {
             Dokumen Opsional
             <span className="text-[12px] font-normal text-n500 ml-1">(sesuai jalur yang dipilih)</span>
           </p>
+          {jalurKode && SUB_KATEGORI_OPTIONS[jalurKode]?.length > 0 && (
+            <p className="text-[12px] text-n500 mb-3">
+              Pilih sub-kategori sebelum upload — nilai kriteria akan dihitung otomatis.
+            </p>
+          )}
           <div className="flex flex-col gap-3 mt-3">
-            {dokumenOpsionalTampil.length === 0 ? (
+            {opsionalWithJalur.length === 0 ? (
               <p className="text-[12px] text-n500">Tidak ada dokumen opsional untuk jalur ini.</p>
             ) : (
-              dokumenOpsionalTampil.map(function(dok) {
+              opsionalWithJalur.map(function(dok) {
+                const opsi = SUB_KATEGORI_OPTIONS[jalurKode] || []
                 return (
-                  <DokItem key={dok.id} dok={dok} statusData={statusData} onUpload={handleUpload} loading={loading} />
+                  <DokItem
+                    key={dok.id}
+                    dok={dok}
+                    statusData={statusData}
+                    onUpload={handleUpload}
+                    loading={loading}
+                    subKategoriOptions={opsi}
+                    subKategori={subKategoriMap[dok.id] || ''}
+                    onSubKategoriChange={handleSubKategoriChange}
+                  />
                 )
               })
             )}
