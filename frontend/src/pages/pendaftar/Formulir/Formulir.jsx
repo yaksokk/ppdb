@@ -1,15 +1,17 @@
-import { useState, useEffect, useRef, useMemo } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { RiHomeSmileLine, RiTrophyLine, RiHeartLine, RiExchangeLine, RiMapPinLine } from 'react-icons/ri'
+import {
+  RiHomeSmileLine, RiTrophyLine, RiHeartLine,
+  RiExchangeLine, RiMapPinLine,
+} from 'react-icons/ri'
 import { Button, Spinner, Alert } from '../../../components/common'
 import { FormInput, FormSelect } from '../../../components/form'
 import DashboardLayout from '../../../components/layout/DashboardLayout/DashboardLayout'
 import pendaftarService from '../../../services/pendaftar.service'
+import api from '../../../services/api'
 import useAuthStore from '../../../store/authStore'
 
 const user_avatarStyle = { background: 'rgba(37,99,235,.25)', color: '#93C5FD' }
-
-const WILAYAH_API = 'https://www.emsifa.com/api-wilayah-indonesia/api'
 
 const JALUR_ICONS = {
   zonasi:   { icon: RiHomeSmileLine, color: 'text-primary' },
@@ -19,31 +21,27 @@ const JALUR_ICONS = {
 }
 
 const SEMESTERS = [
-  { key: '4a', label: 'Kelas 4 Semester 1' },
-  { key: '4b', label: 'Kelas 4 Semester 2' },
-  { key: '5a', label: 'Kelas 5 Semester 1' },
-  { key: '5b', label: 'Kelas 5 Semester 2' },
-  { key: '6a', label: 'Kelas 6 Semester 1' },
+  { key: '4a', label: 'Kelas 4 Sem 1' },
+  { key: '4b', label: 'Kelas 4 Sem 2' },
+  { key: '5a', label: 'Kelas 5 Sem 1' },
+  { key: '5b', label: 'Kelas 5 Sem 2' },
+  { key: '6a', label: 'Kelas 6 Sem 1' },
 ]
-
-function hitungHaversine(lat1, lon1, lat2, lon2) {
-  const R    = 6371
-  const dLat = (lat2 - lat1) * Math.PI / 180
-  const dLon = (lon2 - lon1) * Math.PI / 180
-  const a    = Math.sin(dLat / 2) ** 2 +
-               Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon / 2) ** 2
-  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
-}
 
 function Formulir() {
   const navigate = useNavigate()
   const { user } = useAuthStore()
-  const [jalurList, setJalurList]       = useState([])
-  const [jalurId, setJalurId]           = useState(null)
-  const [loading, setLoading]           = useState(false)
-  const [loadingInit, setLoadingInit]   = useState(true)
-  const [errors, setErrors]             = useState({})
-  const [successMsg, setSuccessMsg]     = useState('')
+
+  const [jalurList,    setJalurList]    = useState([])
+  const [jalurId,      setJalurId]      = useState(null)
+  const [loading,      setLoading]      = useState(false)
+  const [loadingInit,  setLoadingInit]  = useState(true)
+  const [errors,       setErrors]       = useState({})
+  const [successMsg,   setSuccessMsg]   = useState('')
+
+  // R1: Daftar desa dari tabel desa_zonasi
+  const [desaList,    setDesaList]    = useState([])
+  const [selectedDesa, setSelectedDesa] = useState({ nama_desa: '', jarak_km: null })
 
   const [form, setForm] = useState({
     nama_lengkap: '', nisn: '', jenis_kelamin: 'Laki-laki',
@@ -52,25 +50,9 @@ function Formulir() {
     nama_ortu: '', hubungan: 'Ayah', pekerjaan: '', no_telepon: '',
   })
 
-  // P1 — alamat wilayah
-  const [alamat, setAlamat] = useState({
-    provinsi: '', provinsi_id: '',
-    kabupaten: '', kabupaten_id: '',
-    kecamatan: '', kecamatan_id: '',
-    desa: '', desa_id: '',
-    lat: null, lng: null, jarak_km: null,
+  const [nilaiRapor, setNilaiRapor] = useState({
+    '4a': '', '4b': '', '5a': '', '5b': '', '6a': '',
   })
-  const [provinsiList,  setProvinsiList]  = useState([])
-  const [kabupatenList, setKabupatenList] = useState([])
-  const [kecamatanList, setKecamatanList] = useState([])
-  const [desaList,      setDesaList]      = useState([])
-  const [loadingKab,  setLoadingKab]  = useState(false)
-  const [loadingKec,  setLoadingKec]  = useState(false)
-  const [loadingDesa, setLoadingDesa] = useState(false)
-  const sekolahRef = useRef({ lat: null, lng: null })
-
-  // P2 — nilai rapor
-  const [nilaiRapor, setNilaiRapor] = useState({ '4a': '', '4b': '', '5a': '', '5b': '', '6a': '' })
 
   const rataRataRapor = useMemo(() => {
     const vals = Object.values(nilaiRapor).filter(v => v !== '' && !isNaN(parseFloat(v)))
@@ -78,34 +60,19 @@ function Formulir() {
     return (vals.reduce((a, b) => a + parseFloat(b), 0) / vals.length).toFixed(2)
   }, [nilaiRapor])
 
-  // Muat provinsi sekali saat mount
+  // Muat daftar desa aktif dari backend
   useEffect(() => {
-    fetch(`${WILAYAH_API}/provinces.json`)
-      .then(r => r.json())
-      .then(setProvinsiList)
+    api.get('/desa-zonasi/aktif')
+      .then(res => setDesaList(res.data.desa))
       .catch(() => {})
   }, [])
 
-  // Muat koordinat sekolah dari setting
-  useEffect(() => {
-    import('../../../services/api').then(({ default: api }) => {
-      api.get('/setting-publik')
-        .then(res => {
-          const s = res.data.settings
-          if (s.sekolah_lat && s.sekolah_lng) {
-            sekolahRef.current = { lat: parseFloat(s.sekolah_lat), lng: parseFloat(s.sekolah_lng) }
-          }
-        })
-        .catch(() => {})
-    })
-  }, [])
-
-  // Muat data draft + cascade wilayah saat init
+  // Muat data draft saat init
   useEffect(() => {
     const init = async () => {
       try {
         const [jalurRes, statusRes] = await Promise.all([
-          import('../../../services/api').then(({ default: api }) => api.get('/jalur-masuk')),
+          api.get('/jalur-masuk'),
           pendaftarService.getStatus(),
         ])
         setJalurList(jalurRes.data.jalur)
@@ -118,51 +85,27 @@ function Formulir() {
         if (p.data_diri) {
           const d = p.data_diri
           setForm({
-            nama_lengkap: d.nama_lengkap || '',
-            nisn:         d.nisn         || '',
-            jenis_kelamin:d.jenis_kelamin|| 'Laki-laki',
-            agama:        d.agama        || 'Kristen Protestan',
-            tempat_lahir: d.tempat_lahir || '',
-            tgl_lahir:    d.tgl_lahir    ? d.tgl_lahir.substring(0, 10) : '',
-            asal_sekolah: d.asal_sekolah || '',
-            tahun_lulus:  d.tahun_lulus  || '',
-            nama_ortu:    p.data_orang_tua?.nama       || '',
-            hubungan:     p.data_orang_tua?.hubungan   || 'Ayah',
-            pekerjaan:    p.data_orang_tua?.pekerjaan  || '',
-            no_telepon:   p.data_orang_tua?.no_telepon || '',
+            nama_lengkap:  d.nama_lengkap  || '',
+            nisn:          d.nisn          || '',
+            jenis_kelamin: d.jenis_kelamin || 'Laki-laki',
+            agama:         d.agama         || 'Kristen Protestan',
+            tempat_lahir:  d.tempat_lahir  || '',
+            tgl_lahir:     d.tgl_lahir ? d.tgl_lahir.substring(0, 10) : '',
+            asal_sekolah:  d.asal_sekolah  || '',
+            tahun_lulus:   d.tahun_lulus   || '',
+            nama_ortu:     p.data_orang_tua?.nama       || '',
+            hubungan:      p.data_orang_tua?.hubungan   || 'Ayah',
+            pekerjaan:     p.data_orang_tua?.pekerjaan  || '',
+            no_telepon:    p.data_orang_tua?.no_telepon || '',
           })
 
-          // Set state alamat
-          setAlamat({
-            provinsi:    d.provinsi    || '',
-            provinsi_id: d.provinsi_id || '',
-            kabupaten:   d.kabupaten   || '',
-            kabupaten_id:d.kabupaten_id|| '',
-            kecamatan:   d.kecamatan   || '',
-            kecamatan_id:d.kecamatan_id|| '',
-            desa:        d.desa        || '',
-            desa_id:     d.desa_id     || '',
-            lat:         d.lat,
-            lng:         d.lng,
-            jarak_km:    d.jarak_km,
-          })
-
-          // Muat cascade wilayah untuk pre-populate
-          if (d.provinsi_id) {
-            const kabs = await fetch(`${WILAYAH_API}/regencies/${d.provinsi_id}.json`).then(r => r.json())
-            setKabupatenList(kabs)
-          }
-          if (d.kabupaten_id) {
-            const kecs = await fetch(`${WILAYAH_API}/districts/${d.kabupaten_id}.json`).then(r => r.json())
-            setKecamatanList(kecs)
-          }
-          if (d.kecamatan_id) {
-            const desas = await fetch(`${WILAYAH_API}/villages/${d.kecamatan_id}.json`).then(r => r.json())
-            setDesaList(desas)
+          // R1: Pre-populate nama_desa dari data_diri
+          if (d.nama_desa) {
+            setSelectedDesa({ nama_desa: d.nama_desa, jarak_km: d.jarak_km })
           }
         }
 
-        // P2: Pre-populate nilai rapor
+        // Pre-populate nilai rapor
         if (p.nilai_rapor?.length) {
           const mapped = { '4a': '', '4b': '', '5a': '', '5b': '', '6a': '' }
           p.nilai_rapor.forEach(r => { mapped[r.semester] = String(r.nilai) })
@@ -182,82 +125,30 @@ function Formulir() {
     setErrors({ ...errors, [e.target.name]: '' })
   }
 
-  // P1 — cascade handlers
-  const handleProvinsiChange = (e) => {
-    const opt = provinsiList.find(p => p.id === e.target.value)
-    setAlamat({ provinsi: opt?.name || '', provinsi_id: e.target.value,
-      kabupaten: '', kabupaten_id: '', kecamatan: '', kecamatan_id: '',
-      desa: '', desa_id: '', lat: null, lng: null, jarak_km: null })
-    setKabupatenList([]); setKecamatanList([]); setDesaList([])
-    setErrors({ ...errors, provinsi: '' })
-    if (!e.target.value) return
-    setLoadingKab(true)
-    fetch(`${WILAYAH_API}/regencies/${e.target.value}.json`)
-      .then(r => r.json())
-      .then(d => { setKabupatenList(d); setLoadingKab(false) })
-      .catch(() => setLoadingKab(false))
-  }
-
-  const handleKabupatenChange = (e) => {
-    const opt = kabupatenList.find(k => k.id === e.target.value)
-    setAlamat(a => ({ ...a, kabupaten: opt?.name || '', kabupaten_id: e.target.value,
-      kecamatan: '', kecamatan_id: '', desa: '', desa_id: '', lat: null, lng: null, jarak_km: null }))
-    setKecamatanList([]); setDesaList([])
-    setErrors({ ...errors, kabupaten: '' })
-    if (!e.target.value) return
-    setLoadingKec(true)
-    fetch(`${WILAYAH_API}/districts/${e.target.value}.json`)
-      .then(r => r.json())
-      .then(d => { setKecamatanList(d); setLoadingKec(false) })
-      .catch(() => setLoadingKec(false))
-  }
-
-  const handleKecamatanChange = (e) => {
-    const opt = kecamatanList.find(k => k.id === e.target.value)
-    setAlamat(a => ({ ...a, kecamatan: opt?.name || '', kecamatan_id: e.target.value,
-      desa: '', desa_id: '', lat: null, lng: null, jarak_km: null }))
-    setDesaList([])
-    setErrors({ ...errors, kecamatan: '' })
-    if (!e.target.value) return
-    setLoadingDesa(true)
-    fetch(`${WILAYAH_API}/villages/${e.target.value}.json`)
-      .then(r => r.json())
-      .then(d => { setDesaList(d); setLoadingDesa(false) })
-      .catch(() => setLoadingDesa(false))
-  }
-
+  // R1: Saat desa dipilih, otomatis set jarak_km dari data desa_zonasi
   const handleDesaChange = (e) => {
-    const opt   = desaList.find(d => d.id === e.target.value)
-    const lat   = opt?.latitude  ? parseFloat(opt.latitude)  : null
-    const lng   = opt?.longitude ? parseFloat(opt.longitude) : null
-    let jarak_km = null
-
-    if (lat && lng && sekolahRef.current.lat && sekolahRef.current.lng) {
-      jarak_km = parseFloat(
-        hitungHaversine(lat, lng, sekolahRef.current.lat, sekolahRef.current.lng).toFixed(2)
-      )
+    const desaId = parseInt(e.target.value)
+    const desa   = desaList.find(d => d.id === desaId)
+    if (desa) {
+      setSelectedDesa({ nama_desa: desa.nama_desa, jarak_km: parseFloat(desa.jarak_km) })
+    } else {
+      setSelectedDesa({ nama_desa: '', jarak_km: null })
     }
-
-    setAlamat(a => ({ ...a, desa: opt?.name || '', desa_id: e.target.value, lat, lng, jarak_km }))
-    setErrors({ ...errors, desa: '' })
+    setErrors({ ...errors, nama_desa: '' })
   }
 
   const validate = () => {
     const errs = {}
-    if (!form.nama_lengkap) errs.nama_lengkap = 'Wajib diisi'
-    if (!form.nisn)          errs.nisn         = 'Wajib diisi'
-    if (!form.tempat_lahir)  errs.tempat_lahir = 'Wajib diisi'
-    if (!form.tgl_lahir)     errs.tgl_lahir    = 'Wajib diisi'
-    if (!form.asal_sekolah)  errs.asal_sekolah = 'Wajib diisi'
-    if (!form.tahun_lulus)   errs.tahun_lulus  = 'Wajib diisi'
-    if (!form.nama_ortu)     errs.nama_ortu    = 'Wajib diisi'
-    if (!form.no_telepon)    errs.no_telepon   = 'Wajib diisi'
-    if (!jalurId)            errs.jalur        = 'Pilih jalur pendaftaran'
-    // P1 — alamat wajib
-    if (!alamat.provinsi_id) errs.provinsi    = 'Pilih provinsi'
-    if (!alamat.kabupaten_id)errs.kabupaten   = 'Pilih kabupaten/kota'
-    if (!alamat.kecamatan_id)errs.kecamatan   = 'Pilih kecamatan'
-    if (!alamat.desa_id)     errs.desa        = 'Pilih desa/kelurahan'
+    if (!form.nama_lengkap)       errs.nama_lengkap  = 'Wajib diisi'
+    if (!form.nisn)                errs.nisn          = 'Wajib diisi'
+    if (!form.tempat_lahir)        errs.tempat_lahir  = 'Wajib diisi'
+    if (!form.tgl_lahir)           errs.tgl_lahir     = 'Wajib diisi'
+    if (!form.asal_sekolah)        errs.asal_sekolah  = 'Wajib diisi'
+    if (!form.tahun_lulus)         errs.tahun_lulus   = 'Wajib diisi'
+    if (!form.nama_ortu)           errs.nama_ortu     = 'Wajib diisi'
+    if (!form.no_telepon)          errs.no_telepon    = 'Wajib diisi'
+    if (!jalurId)                  errs.jalur         = 'Pilih jalur pendaftaran'
+    if (!selectedDesa.nama_desa)   errs.nama_desa     = 'Pilih desa domisili'
     return errs
   }
 
@@ -268,20 +159,11 @@ function Formulir() {
 
     return {
       ...form,
-      jalur_id: jalurId,
-      // P1
-      provinsi:     alamat.provinsi,
-      provinsi_id:  alamat.provinsi_id,
-      kabupaten:    alamat.kabupaten,
-      kabupaten_id: alamat.kabupaten_id,
-      kecamatan:    alamat.kecamatan,
-      kecamatan_id: alamat.kecamatan_id,
-      desa:         alamat.desa,
-      desa_id:      alamat.desa_id,
-      lat:          alamat.lat,
-      lng:          alamat.lng,
-      jarak_km:     alamat.jarak_km,
-      // P2
+      jalur_id:  jalurId,
+      // R1: kirim nama_desa dan jarak_km (bukan cascade wilayah)
+      nama_desa: selectedDesa.nama_desa,
+      jarak_km:  selectedDesa.jarak_km,
+      // Nilai rapor
       nilai_rapor: nilaiRaporPayload,
     }
   }
@@ -314,6 +196,7 @@ function Formulir() {
     }
   }
 
+  const selectedDesaId = desaList.find(d => d.nama_desa === selectedDesa.nama_desa)?.id ?? ''
   const userObj = { name: user?.name || 'Pendaftar', avatarStyle: user_avatarStyle }
 
   if (loadingInit) return (
@@ -357,89 +240,44 @@ function Formulir() {
           </div>
         </div>
 
-        {/* B — Alamat Domisili (P1) */}
+        {/* B — Domisili Siswa (R1: single dropdown desa) */}
         <div className="bg-white border border-n200 rounded-lg p-5 shadow-xs">
-          <p className="text-[15px] font-bold font-poppins text-primary mb-1">B · Alamat Domisili Siswa</p>
-          <p className="text-[12px] text-n500 mb-4">Pilih berdasarkan wilayah administrasi tempat tinggal</p>
-          <div className="grid grid-cols-2 gap-x-4">
-            <div className="mb-3">
-              <label className="block text-[11px] font-bold text-n600 uppercase tracking-wide mb-1.5">
-                Provinsi <span className="text-danger">*</span>
-              </label>
-              <select
-                value={alamat.provinsi_id}
-                onChange={handleProvinsiChange}
-                className={`w-full px-3 py-[9px] text-[13px] text-n800 border-[1.5px] rounded-sm bg-white outline-none transition-all cursor-pointer focus:border-primary ${errors.provinsi ? 'border-danger' : 'border-n200'}`}
-              >
-                <option value="">-- Pilih Provinsi --</option>
-                {provinsiList.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
-              </select>
-              {errors.provinsi && <p className="mt-1 text-[11px] text-danger">{errors.provinsi}</p>}
-            </div>
+          <p className="text-[15px] font-bold font-poppins text-primary mb-1">B · Desa Domisili Siswa</p>
+          <p className="text-[12px] text-n500 mb-4">
+            Pilih nama desa sesuai tempat tinggal. Jarak ke sekolah akan terisi otomatis.
+          </p>
 
-            <div className="mb-3">
-              <label className="block text-[11px] font-bold text-n600 uppercase tracking-wide mb-1.5">
-                Kabupaten / Kota <span className="text-danger">*</span>
-              </label>
-              <select
-                value={alamat.kabupaten_id}
-                onChange={handleKabupatenChange}
-                disabled={!alamat.provinsi_id || loadingKab}
-                className={`w-full px-3 py-[9px] text-[13px] text-n800 border-[1.5px] rounded-sm bg-white outline-none transition-all cursor-pointer focus:border-primary disabled:opacity-50 disabled:cursor-not-allowed ${errors.kabupaten ? 'border-danger' : 'border-n200'}`}
-              >
-                <option value="">{loadingKab ? 'Memuat...' : '-- Pilih Kabupaten/Kota --'}</option>
-                {kabupatenList.map(k => <option key={k.id} value={k.id}>{k.name}</option>)}
-              </select>
-              {errors.kabupaten && <p className="mt-1 text-[11px] text-danger">{errors.kabupaten}</p>}
-            </div>
-
-            <div className="mb-3">
-              <label className="block text-[11px] font-bold text-n600 uppercase tracking-wide mb-1.5">
-                Kecamatan <span className="text-danger">*</span>
-              </label>
-              <select
-                value={alamat.kecamatan_id}
-                onChange={handleKecamatanChange}
-                disabled={!alamat.kabupaten_id || loadingKec}
-                className={`w-full px-3 py-[9px] text-[13px] text-n800 border-[1.5px] rounded-sm bg-white outline-none transition-all cursor-pointer focus:border-primary disabled:opacity-50 disabled:cursor-not-allowed ${errors.kecamatan ? 'border-danger' : 'border-n200'}`}
-              >
-                <option value="">{loadingKec ? 'Memuat...' : '-- Pilih Kecamatan --'}</option>
-                {kecamatanList.map(k => <option key={k.id} value={k.id}>{k.name}</option>)}
-              </select>
-              {errors.kecamatan && <p className="mt-1 text-[11px] text-danger">{errors.kecamatan}</p>}
-            </div>
-
-            <div className="mb-3">
-              <label className="block text-[11px] font-bold text-n600 uppercase tracking-wide mb-1.5">
-                Desa / Kelurahan <span className="text-danger">*</span>
-              </label>
-              <select
-                value={alamat.desa_id}
-                onChange={handleDesaChange}
-                disabled={!alamat.kecamatan_id || loadingDesa}
-                className={`w-full px-3 py-[9px] text-[13px] text-n800 border-[1.5px] rounded-sm bg-white outline-none transition-all cursor-pointer focus:border-primary disabled:opacity-50 disabled:cursor-not-allowed ${errors.desa ? 'border-danger' : 'border-n200'}`}
-              >
-                <option value="">{loadingDesa ? 'Memuat...' : '-- Pilih Desa/Kelurahan --'}</option>
-                {desaList.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
-              </select>
-              {errors.desa && <p className="mt-1 text-[11px] text-danger">{errors.desa}</p>}
-            </div>
+          <div className="mb-3">
+            <label className="block text-[11px] font-bold text-n600 uppercase tracking-wide mb-1.5">
+              Desa / Kelurahan <span className="text-danger">*</span>
+            </label>
+            <select
+              value={selectedDesaId}
+              onChange={handleDesaChange}
+              className={`w-full px-3 py-[9px] text-[13px] text-n800 border-[1.5px] rounded-sm bg-white outline-none transition-all cursor-pointer focus:border-primary
+                ${errors.nama_desa ? 'border-danger' : 'border-n200'}`}
+            >
+              <option value="">-- Pilih Desa --</option>
+              {desaList.map(d => (
+                <option key={d.id} value={d.id}>{d.nama_desa}</option>
+              ))}
+            </select>
+            {errors.nama_desa && <p className="mt-1 text-[11px] text-danger">{errors.nama_desa}</p>}
           </div>
 
-          {/* Tampil jarak otomatis */}
-          {alamat.desa_id && (
-            <div className="flex items-center gap-2 mt-1 px-3 py-2 bg-primary-light border border-blue-200 rounded-sm">
+          {/* Info jarak otomatis */}
+          {selectedDesa.nama_desa && (
+            <div className="flex items-center gap-2 px-3 py-2 bg-primary-light border border-blue-200 rounded-sm">
               <RiMapPinLine size={14} className="text-primary flex-shrink-0" />
               <p className="text-[12px] text-blue-800">
-                {alamat.jarak_km !== null
-                  ? <><strong>Jarak ke Sekolah: {alamat.jarak_km} km</strong> — dihitung otomatis dari koordinat desa</>
-                  : 'Koordinat desa tidak tersedia, jarak tidak dapat dihitung otomatis.'}
+                <strong>Jarak ke Sekolah: {selectedDesa.jarak_km} km</strong>
+                <span className="text-[11px] font-normal text-n500 ml-1">— berdasarkan data zonasi sekolah</span>
               </p>
             </div>
           )}
         </div>
 
-        {/* C — Nilai Rapor (P2) */}
+        {/* C — Nilai Rapor */}
         <div className="bg-white border border-n200 rounded-lg p-5 shadow-xs">
           <p className="text-[15px] font-bold font-poppins text-primary mb-1">C · Nilai Rata-rata Rapor</p>
           <p className="text-[12px] text-n500 mb-4">Input nilai rata-rata dari semua mata pelajaran per semester</p>
@@ -463,7 +301,8 @@ function Formulir() {
           {rataRataRapor !== null && (
             <div className="mt-1 px-3 py-2 bg-success-light border border-green-200 rounded-sm">
               <p className="text-[12px] text-success font-semibold">
-                Rata-rata dari {Object.values(nilaiRapor).filter(v => v !== '').length} semester: <strong>{rataRataRapor}</strong>
+                Rata-rata dari {Object.values(nilaiRapor).filter(v => v !== '').length} semester:{' '}
+                <strong>{rataRataRapor}</strong>
                 <span className="text-[11px] font-normal text-n500 ml-1">— akan menjadi nilai kriteria rapor otomatis</span>
               </p>
             </div>

@@ -20,6 +20,7 @@ import HasilSeleksiPendaftar from '../pages/pendaftar/HasilSeleksi/HasilSeleksi'
 import Beranda from '../pages/public/Beranda/Beranda'
 import SeleksiSaw from '../pages/admin/SeleksiSaw/SeleksiSaw'
 import SettingKuota from '../pages/admin/SettingKuota/SettingKuota'
+import KelolaDesaZonasi from '../pages/admin/KelolaDesaZonasi/KelolaDesaZonasi'
 
 function AppRoutes() {
   return (
@@ -63,6 +64,11 @@ function AppRoutes() {
       {/* A2: Setting Kuota */}
       <Route path="/admin/kuota" element={
         <PrivateRoute><RoleRoute allowedRoles={['admin']}><SettingKuota /></RoleRoute></PrivateRoute>
+      } />
+
+      {/* R1: Kelola Desa Zonasi — admin only */}
+      <Route path="/admin/desa-zonasi" element={
+        <PrivateRoute><RoleRoute allowedRoles={['admin']}><KelolaDesaZonasi /></RoleRoute></PrivateRoute>
       } />
 
       <Route path="/operator/dashboard" element={

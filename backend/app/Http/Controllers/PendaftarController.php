@@ -23,7 +23,8 @@ class PendaftarController extends Controller
     }
 
     /**
-     * P4: Sync nilai_kriteria otomatis dari data rapor dan jarak.
+     * R1+R2: Sync nilai_kriteria otomatis dari data rapor dan jarak desa.
+     * Jarak diambil langsung dari tabel desa_zonasi, bukan dihitung Haversine.
      */
     private function syncNilaiFromForm(Pendaftaran $pendaftaran, ?array $nilaiRaporData, ?float $jarakKm): void
     {
@@ -34,7 +35,7 @@ class PendaftarController extends Controller
         $kriteria = Kriteria::where('jalur_id', $pendaftaran->jalur_id)->get();
 
         foreach ($kriteria as $k) {
-            // P2: Sync *_rapor dari rata-rata nilai rapor
+            // Sync *_rapor dari rata-rata nilai rapor
             if (str_ends_with($k->kode, '_rapor') && !empty($nilaiRaporData)) {
                 $values = array_filter(
                     array_column($nilaiRaporData, 'nilai'),
@@ -49,7 +50,7 @@ class PendaftarController extends Controller
                 }
             }
 
-            // P1: Sync zonasi_jarak dari kalkulasi Haversine
+            // R1: Sync zonasi_jarak dari nilai jarak desa (bukan Haversine)
             if ($k->kode === 'zonasi_jarak' && $jarakKm !== null) {
                 NilaiKriteria::updateOrCreate(
                     ['pendaftaran_id' => $pendaftaran->id, 'kriteria_id' => $k->id],
@@ -60,7 +61,7 @@ class PendaftarController extends Controller
     }
 
     /**
-     * P3: Sync nilai_kriteria otomatis dari sub_kategori dokumen.
+     * Sync nilai_kriteria otomatis dari sub_kategori dokumen.
      */
     private function syncNilaiFromDokumen(Pendaftaran $pendaftaran, string $subKategori): void
     {
@@ -92,8 +93,6 @@ class PendaftarController extends Controller
             $kodeKriteria = 'afirmasi_ekonomi';
             $score        = $map[$subKategori] ?? null;
         }
-        // Mutasi: sub_kategori disimpan tapi tidak mempengaruhi nilai kriteria
-        // Zonasi: tidak ada sub_kategori
 
         if ($kodeKriteria && $score !== null) {
             $kriteria = Kriteria::where('kode', $kodeKriteria)->first();
@@ -109,24 +108,22 @@ class PendaftarController extends Controller
     public function submitFormulir(Request $request)
     {
         $request->validate([
-            'jalur_id'       => 'required|exists:jalur_masuk,id',
-            'nama_lengkap'   => 'required|string',
-            'nisn'           => 'required|string',
-            'jenis_kelamin'  => 'required|string',
-            'tempat_lahir'   => 'required|string',
-            'tgl_lahir'      => 'required|date',
-            'agama'          => 'required|string',
-            'asal_sekolah'   => 'required|string',
-            'tahun_lulus'    => 'required|string',
-            'nama_ortu'      => 'required|string',
-            'hubungan'       => 'required|string',
-            'no_telepon'     => 'required|string',
-            // P1 – alamat wilayah
-            'provinsi'       => 'required|string',
-            'kabupaten'      => 'required|string',
-            'kecamatan'      => 'required|string',
-            'desa'           => 'required|string',
-            // P2 – nilai rapor
+            'jalur_id'      => 'required|exists:jalur_masuk,id',
+            'nama_lengkap'  => 'required|string',
+            'nisn'          => 'required|string',
+            'jenis_kelamin' => 'required|string',
+            'tempat_lahir'  => 'required|string',
+            'tgl_lahir'     => 'required|date',
+            'agama'         => 'required|string',
+            'asal_sekolah'  => 'required|string',
+            'tahun_lulus'   => 'required|string',
+            'nama_ortu'     => 'required|string',
+            'hubungan'      => 'required|string',
+            'no_telepon'    => 'required|string',
+            // R1: cukup nama_desa dari desa_zonasi
+            'nama_desa'     => 'required|string',
+            'jarak_km'      => 'required|numeric|min:0',
+            // Nilai rapor
             'nilai_rapor'             => 'nullable|array',
             'nilai_rapor.*.semester'  => 'required_with:nilai_rapor|in:4a,4b,5a,5b,6a',
             'nilai_rapor.*.nilai'     => 'required_with:nilai_rapor|numeric|min:0|max:100',
@@ -154,17 +151,8 @@ class PendaftarController extends Controller
                 'agama'         => $request->agama,
                 'asal_sekolah'  => $request->asal_sekolah,
                 'tahun_lulus'   => $request->tahun_lulus,
-                // P1
-                'provinsi'      => $request->provinsi,
-                'provinsi_id'   => $request->provinsi_id,
-                'kabupaten'     => $request->kabupaten,
-                'kabupaten_id'  => $request->kabupaten_id,
-                'kecamatan'     => $request->kecamatan,
-                'kecamatan_id'  => $request->kecamatan_id,
-                'desa'          => $request->desa,
-                'desa_id'       => $request->desa_id,
-                'lat'           => $request->lat,
-                'lng'           => $request->lng,
+                // R1: simpan nama_desa dan jarak_km dari desa_zonasi
+                'nama_desa'     => $request->nama_desa,
                 'jarak_km'      => $request->jarak_km,
             ]
         );
@@ -180,7 +168,6 @@ class PendaftarController extends Controller
             ]
         );
 
-        // P2: Simpan nilai rapor per semester
         if ($request->filled('nilai_rapor')) {
             foreach ($request->nilai_rapor as $item) {
                 NilaiRapor::updateOrCreate(
@@ -190,11 +177,11 @@ class PendaftarController extends Controller
             }
         }
 
-        // P4: Sync nilai_kriteria otomatis
+        // R2: Sync nilai_kriteria otomatis
         $this->syncNilaiFromForm(
             $pendaftaran,
             $request->nilai_rapor,
-            $request->jarak_km !== null ? (float) $request->jarak_km : null
+            (float) $request->jarak_km
         );
 
         return response()->json([
@@ -227,7 +214,7 @@ class PendaftarController extends Controller
             ]
         );
 
-        // P4: Sync nilai_kriteria dari sub_kategori dokumen
+        // R2: Sync nilai_kriteria dari sub_kategori dokumen
         if ($request->filled('sub_kategori')) {
             $this->syncNilaiFromDokumen($pendaftaran, $request->sub_kategori);
         }
@@ -319,7 +306,8 @@ class PendaftarController extends Controller
             'nama_ortu'     => 'nullable|string',
             'hubungan'      => 'nullable|string',
             'no_telepon'    => 'nullable|string',
-            // P2
+            'nama_desa'     => 'nullable|string',
+            'jarak_km'      => 'nullable|numeric|min:0',
             'nilai_rapor'             => 'nullable|array',
             'nilai_rapor.*.semester'  => 'required_with:nilai_rapor|in:4a,4b,5a,5b,6a',
             'nilai_rapor.*.nilai'     => 'required_with:nilai_rapor|numeric|min:0|max:100',
@@ -336,8 +324,7 @@ class PendaftarController extends Controller
             ]
         );
 
-
-        if ($request->filled('nama_lengkap') || $request->filled('nisn') || $request->filled('provinsi')) {
+        if ($request->filled('nama_lengkap') || $request->filled('nisn') || $request->filled('nama_desa')) {
             DataDiri::updateOrCreate(
                 ['pendaftaran_id' => $pendaftaran->id],
                 array_filter([
@@ -349,17 +336,7 @@ class PendaftarController extends Controller
                     'agama'         => $request->agama,
                     'asal_sekolah'  => $request->asal_sekolah,
                     'tahun_lulus'   => $request->tahun_lulus,
-                    // P1
-                    'provinsi'      => $request->provinsi,
-                    'provinsi_id'   => $request->provinsi_id,
-                    'kabupaten'     => $request->kabupaten,
-                    'kabupaten_id'  => $request->kabupaten_id,
-                    'kecamatan'     => $request->kecamatan,
-                    'kecamatan_id'  => $request->kecamatan_id,
-                    'desa'          => $request->desa,
-                    'desa_id'       => $request->desa_id,
-                    'lat'           => $request->lat,
-                    'lng'           => $request->lng,
+                    'nama_desa'     => $request->nama_desa,
                     'jarak_km'      => $request->jarak_km,
                 ], fn($v) => $v !== null && $v !== '')
             );
@@ -378,7 +355,6 @@ class PendaftarController extends Controller
             );
         }
 
-        // P2: Simpan nilai rapor draft
         if ($request->filled('nilai_rapor')) {
             foreach ($request->nilai_rapor as $item) {
                 if (isset($item['nilai']) && $item['nilai'] !== '') {
@@ -390,7 +366,6 @@ class PendaftarController extends Controller
             }
         }
 
-        // P4: Sync nilai_kriteria otomatis
         if ($pendaftaran->jalur_id) {
             $this->syncNilaiFromForm(
                 $pendaftaran,

@@ -7,8 +7,8 @@ use App\Http\Controllers\AdminController;
 use App\Http\Controllers\OperatorController;
 use App\Http\Controllers\SawController;
 use App\Http\Controllers\KriteriaController;
+use App\Http\Controllers\DesaZonasiController;
 use App\Models\JalurMasuk;
-
 
 Route::prefix('auth')->group(function () {
     Route::post('/register', [AuthController::class, 'register']);
@@ -32,21 +32,28 @@ Route::get('/setting-publik', function () {
         'nama_sekolah', 'alamat', 'email', 'no_telepon',
         'tahun_ajaran', 'tgl_buka', 'tgl_tutup',
         'tgl_verifikasi', 'tgl_pengumuman', 'tgl_daftar_ulang',
-        // P1: koordinat sekolah untuk kalkulasi jarak Haversine
-        'sekolah_lat', 'sekolah_lng',
+        'status_ppdb',
     ])->get()->pluck('value', 'key');
     return response()->json(['settings' => $settings]);
 });
 
+// R1: Endpoint desa zonasi aktif — publik untuk formulir pendaftar
+Route::get('/desa-zonasi/aktif', [DesaZonasiController::class, 'aktif']);
+
 Route::middleware(['auth:sanctum', 'role:pendaftar'])->prefix('pendaftar')->group(function () {
-    Route::post('/formulir',        [PendaftarController::class, 'submitFormulir']);
-    Route::put('/formulir',         [PendaftarController::class, 'submitFormulir']);
-    Route::post('/formulir/draft',  [PendaftarController::class, 'saveDraft']);
-    Route::post('/dokumen',         [PendaftarController::class, 'uploadDokumen']);
-    Route::delete('/dokumen/{id}',  [PendaftarController::class, 'hapusDokumen']);
-    Route::post('/submit',          [PendaftarController::class, 'submit']);
-    Route::get('/status',           [PendaftarController::class, 'status']);
-    Route::get('/hasil',            [PendaftarController::class, 'hasil']);
+    // R4: GET /pendaftar/status dan /pendaftar/hasil tidak kena middleware CekStatusPpdb
+    Route::get('/status', [PendaftarController::class, 'status']);
+    Route::get('/hasil',  [PendaftarController::class, 'hasil']);
+
+    // R4: Semua route pendaftar lainnya dibatasi saat PPDB tutup
+    Route::middleware('cek.ppdb')->group(function () {
+        Route::post('/formulir',       [PendaftarController::class, 'submitFormulir']);
+        Route::put('/formulir',        [PendaftarController::class, 'submitFormulir']);
+        Route::post('/formulir/draft', [PendaftarController::class, 'saveDraft']);
+        Route::post('/dokumen',        [PendaftarController::class, 'uploadDokumen']);
+        Route::delete('/dokumen/{id}', [PendaftarController::class, 'hapusDokumen']);
+        Route::post('/submit',         [PendaftarController::class, 'submit']);
+    });
 });
 
 // Admin-only routes
@@ -61,9 +68,15 @@ Route::middleware(['auth:sanctum', 'role:admin'])->prefix('admin')->group(functi
     Route::get('/pendaftar-akun',              [AdminController::class, 'listPendaftarAkun']);
     Route::put('/pendaftar-akun/{id}/toggle',  [AdminController::class, 'toggleAktifPendaftar']);
     Route::delete('/pendaftar-akun/{id}',      [AdminController::class, 'hapusPendaftarAkun']);
-    // A2: Setting Kuota
     Route::get('/kuota',             [AdminController::class, 'getKuota']);
     Route::put('/kuota',             [AdminController::class, 'updateKuota']);
+
+    // R1: CRUD Desa Zonasi — hanya admin
+    Route::get('/desa-zonasi',            [DesaZonasiController::class, 'index']);
+    Route::post('/desa-zonasi',           [DesaZonasiController::class, 'store']);
+    Route::put('/desa-zonasi/{id}',       [DesaZonasiController::class, 'update']);
+    Route::put('/desa-zonasi/{id}/toggle',[DesaZonasiController::class, 'toggle']);
+    Route::delete('/desa-zonasi/{id}',    [DesaZonasiController::class, 'destroy']);
 });
 
 // Shared admin + operator routes
@@ -73,7 +86,6 @@ Route::middleware(['auth:sanctum', 'role:admin|operator'])->group(function () {
     Route::get('/admin/pendaftar/{id}',          [AdminController::class, 'detailPendaftar']);
     Route::put('/admin/pendaftar/{id}/status',   [AdminController::class, 'updateStatus']);
     Route::put('/admin/dokumen/{id}/verifikasi', [AdminController::class, 'verifikasiDokumen']);
-    // A1: Seleksi SAW read-only untuk admin, dan akses bersama operator
     Route::get('/admin/seleksi-saw',             [AdminController::class, 'listSeleksiSaw']);
 });
 
@@ -81,11 +93,8 @@ Route::middleware(['auth:sanctum', 'role:admin|operator'])->group(function () {
 Route::middleware(['auth:sanctum', 'role:operator'])->prefix('operator')->group(function () {
     Route::get('/pendaftar',               [OperatorController::class, 'listPendaftar']);
     Route::get('/pendaftar/{id}',          [OperatorController::class, 'detailPendaftar']);
-    Route::post('/pendaftar/{id}/nilai',   [OperatorController::class, 'inputNilai']);
-    // O2: Tombol Valid dan Kirim Perbaikan
     Route::put('/pendaftar/{id}/valid',    [OperatorController::class, 'setValid']);
     Route::put('/pendaftar/{id}/perbaikan',[OperatorController::class, 'kirimPerbaikan']);
-    // O3: Daftar terverifikasi untuk Seleksi SAW
     Route::get('/seleksi-saw',             [OperatorController::class, 'listSeleksiSaw']);
     Route::get('/hasil-seleksi',           [OperatorController::class, 'hasilSeleksi']);
     Route::put('/hasil-seleksi/{id}',      [OperatorController::class, 'updateHasil']);

@@ -21,6 +21,12 @@ const adminService = {
   // A2: Setting Kuota
   getKuota:             ()         => api.get('/admin/kuota'),
   updateKuota:          (data)     => api.put('/admin/kuota', data),
+  // R1: Kelola Desa Zonasi
+  getDesaZonasi:        (params)   => api.get('/admin/desa-zonasi', { params }),
+  tambahDesa:           (data)     => api.post('/admin/desa-zonasi', data),
+  updateDesa:           (id, data) => api.put(`/admin/desa-zonasi/${id}`, data),
+  toggleDesa:           (id)       => api.put(`/admin/desa-zonasi/${id}/toggle`),
+  hapusDesa:            (id)       => api.delete(`/admin/desa-zonasi/${id}`),
 }
 
 export default adminService

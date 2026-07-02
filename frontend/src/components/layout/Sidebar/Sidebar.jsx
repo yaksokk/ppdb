@@ -4,7 +4,7 @@ import {
   RiArrowDownSLine, RiArrowUpSLine, RiSchoolLine, RiDashboardLine,
   RiGroupLine, RiScales2Line, RiFileList3Line, RiUploadCloud2Line,
   RiTrophyLine, RiInformationLine, RiLogoutBoxRLine, RiUserSettingsLine,
-  RiFilterLine, RiPieChartLine,
+  RiFilterLine, RiPieChartLine, RiMapPin2Line,
 } from 'react-icons/ri'
 import { Avatar } from '../../common'
 import authService from '../../../services/auth.service'
@@ -23,6 +23,8 @@ const NAV_CONFIG = {
       ]
     },
     { icon: RiInformationLine, label: 'Kelola Info',   path: '/admin/pengumuman' },
+    // R1: Menu Kelola Desa Zonasi
+    { icon: RiMapPin2Line,     label: 'Desa Zonasi',   path: '/admin/desa-zonasi' },
     // A2: Setting Kuota
     { icon: RiPieChartLine,    label: 'Setting Kuota', path: '/admin/kuota' },
     { icon: RiScales2Line,     label: 'Kriteria SAW',  path: '/admin/kriteria' },
