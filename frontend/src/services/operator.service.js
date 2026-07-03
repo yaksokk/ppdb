@@ -3,7 +3,7 @@ import api from './api'
 const operatorService = {
   getListPendaftar:   (params)   => api.get('/operator/pendaftar', { params }),
   getDetailPendaftar: (id)       => api.get(`/operator/pendaftar/${id}`),
-  inputNilai:         (id, data) => api.post(`/operator/pendaftar/${id}/nilai`, data),
+  // R2: inputNilai dihapus — nilai kriteria kini diisi otomatis oleh sistem
   // O2: Verifikasi pendaftar
   setValid:           (id)       => api.put(`/operator/pendaftar/${id}/valid`),
   kirimPerbaikan:     (id)       => api.put(`/operator/pendaftar/${id}/perbaikan`),

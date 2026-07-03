@@ -3,7 +3,7 @@ import { useNavigate, useParams, useLocation } from 'react-router-dom'
 import {
   RiArrowLeftLine, RiCheckLine, RiCloseLine, RiTimeLine,
   RiFileTextLine, RiTrophyLine, RiAlertLine, RiShieldCheckLine,
-  RiMapPinLine,
+  RiMapPinLine, RiHomeSmileLine,
 } from 'react-icons/ri'
 import { Badge, Button, Modal, Spinner } from '../../../components/common'
 import DashboardLayout from '../../../components/layout/DashboardLayout/DashboardLayout'
@@ -12,7 +12,6 @@ import adminService from '../../../services/admin.service'
 import kriteriaService from '../../../services/kriteria.service'
 import useAuthStore from '../../../store/authStore'
 
-// O1/O2: Tambah status terverifikasi
 const STATUS_BANNER = {
   menunggu:      { bg: 'bg-warning-light border-amber-200',  textColor: 'text-warning',     icon: RiTimeLine,        label: 'Menunggu Verifikasi Dokumen' },
   perbaikan:     { bg: 'bg-orange-50 border-orange-200',     textColor: 'text-orange-600',   icon: RiAlertLine,       label: 'Perlu Perbaikan Dokumen' },
@@ -21,7 +20,11 @@ const STATUS_BANNER = {
   ditolak:       { bg: 'bg-danger-light border-red-200',     textColor: 'text-danger',       icon: RiCloseLine,       label: 'Pendaftar Ditolak' },
 }
 
-const SEMESTER_LABEL = { '4a': 'Kls 4 Sem 1', '4b': 'Kls 4 Sem 2', '5a': 'Kls 5 Sem 1', '5b': 'Kls 5 Sem 2', '6a': 'Kls 6 Sem 1' }
+const SEMESTER_LABEL = {
+  '4a': 'Kls 4 Sem 1', '4b': 'Kls 4 Sem 2',
+  '5a': 'Kls 5 Sem 1', '5b': 'Kls 5 Sem 2',
+  '6a': 'Kls 6 Sem 1',
+}
 
 function InfoRow({ label, value }) {
   return (
@@ -37,20 +40,17 @@ function DetailPendaftar() {
   const location  = useLocation()
   const { id }    = useParams()
   const { user }  = useAuthStore()
+
   const [data,         setData]         = useState(null)
   const [loading,      setLoading]      = useState(true)
   const [catatanModal, setCatatanModal] = useState({ open: false, id: null, catatan: '' })
   const [konfirmasi,   setKonfirmasi]   = useState({ open: false, tipe: null })
   const [saving,       setSaving]       = useState(false)
   const [kriteriaList, setKriteriaList] = useState([])
-  const [nilaiForm,    setNilaiForm]    = useState({})
-  const [savingNilai,  setSavingNilai]  = useState(false)
-  const [nilaiSuccess, setNilaiSuccess] = useState('')
 
   const isAdmin    = user?.role === 'admin'
   const isOperator = user?.role === 'operator'
-
-  const fromPath = location.state?.from || '/admin/pendaftar'
+  const fromPath   = location.state?.from || '/admin/pendaftar'
 
   const userObj = {
     name: user?.name || (isAdmin ? 'Admin' : 'Operator'),
@@ -70,15 +70,7 @@ function DetailPendaftar() {
         setData(p)
         if (p?.jalur_id) {
           kriteriaService.getByJalur(p.jalur_id)
-            .then(kr => {
-              setKriteriaList(kr.data.kriteria)
-              const initNilai = {}
-              kr.data.kriteria.forEach(k => {
-                const existing = p.nilai_kriteria?.find(n => n.kriteria_id === k.id)
-                initNilai[k.id] = existing ? existing.nilai : ''
-              })
-              setNilaiForm(initNilai)
-            })
+            .then(kr => setKriteriaList(kr.data.kriteria))
             .catch(() => {})
         }
       })
@@ -87,22 +79,6 @@ function DetailPendaftar() {
   }
 
   useEffect(() => { fetchData() }, [id])
-
-  const handleSimpanNilai = async () => {
-    setSavingNilai(true)
-    try {
-      const nilai = Object.keys(nilaiForm)
-        .filter(kid => nilaiForm[kid] !== '')
-        .map(kid => ({ kriteria_id: parseInt(kid), nilai: parseFloat(nilaiForm[kid]) }))
-      await operatorService.inputNilai(id, { nilai })
-      setNilaiSuccess('Nilai berhasil disimpan!')
-      setTimeout(() => setNilaiSuccess(''), 3000)
-    } catch (err) {
-      console.error(err)
-    } finally {
-      setSavingNilai(false)
-    }
-  }
 
   const handleVerifikasiDok = async (dokId, status, catatan = null) => {
     setSaving(true)
@@ -117,7 +93,6 @@ function DetailPendaftar() {
     }
   }
 
-  // O2: Tombol Valid
   const handleSetValid = async () => {
     setSaving(true)
     try {
@@ -131,7 +106,6 @@ function DetailPendaftar() {
     }
   }
 
-  // O2: Tombol Kirim Perbaikan
   const handleKirimPerbaikan = async () => {
     setSaving(true)
     try {
@@ -145,7 +119,6 @@ function DetailPendaftar() {
     }
   }
 
-  // Admin: Keputusan Akhir
   const handleKeputusan = async (tipe) => {
     setSaving(true)
     try {
@@ -171,46 +144,49 @@ function DetailPendaftar() {
     </DashboardLayout>
   )
 
-  const bannerConfig   = STATUS_BANNER[data.status] || STATUS_BANNER['menunggu']
-  const BannerIcon     = bannerConfig.icon
-  const dokumenWajib   = data.dokumen?.filter(d => ['akta', 'kk', 'ijazah', 'rapor'].includes(d.jenis)) || []
+  const bannerConfig     = STATUS_BANNER[data.status] || STATUS_BANNER['menunggu']
+  const BannerIcon       = bannerConfig.icon
+  const dokumenWajib     = data.dokumen?.filter(d => ['akta', 'kk', 'ijazah', 'rapor'].includes(d.jenis)) || []
   const dokumenPendukung = data.dokumen?.filter(d => !['akta', 'kk', 'ijazah', 'rapor'].includes(d.jenis)) || []
-  const totalDok   = data.dokumen?.length || 0
-  const diperiksa  = data.dokumen?.filter(d => d.status !== 'belum').length || 0
-  const allDocsChecked = totalDok > 0 && data.dokumen?.every(d => d.status !== 'belum')
+  const totalDok         = data.dokumen?.length || 0
+  const diperiksa        = data.dokumen?.filter(d => d.status !== 'belum').length || 0
+  const allDocsChecked   = totalDok > 0 && data.dokumen?.every(d => d.status !== 'belum')
 
-  // Tampilkan tombol operator (O2) hanya untuk menunggu/perbaikan
   const showOperatorButtons = isOperator && ['menunggu', 'perbaikan'].includes(data.status)
 
-  // Alamat lengkap (P1)
-  const alamatLengkap = [data.data_diri?.desa, data.data_diri?.kecamatan, data.data_diri?.kabupaten, data.data_diri?.provinsi]
-    .filter(Boolean).join(', ')
-
-  // Rata-rata rapor (P2)
-  const nilaiRaporArr = data.nilai_rapor || []
-  const rataRataRapor = nilaiRaporArr.length
+  // R2: ambil nilai kriteria dari data (read-only)
+  const nilaiRaporArr  = data.nilai_rapor || []
+  const rataRataRapor  = nilaiRaporArr.length
     ? (nilaiRaporArr.reduce((s, r) => s + parseFloat(r.nilai), 0) / nilaiRaporArr.length).toFixed(2)
     : null
 
+  // R3: keputusan final admin hanya boleh jika sudah_saw
+  const hasilStatus      = data.seleksi?.hasil_status
+  const canAdminDecide   = isAdmin && hasilStatus === 'sudah_saw'
+
+  const backPath = data.status === 'terverifikasi' ? '/admin/seleksi-saw' : '/admin/pendaftar'
+
   const renderDokItem = (dok) => (
     <div key={dok.id} className={`border rounded-md p-3 mb-2 last:mb-0 transition-all
-      ${dok.status === 'valid'    ? 'border-green-200 bg-success-light' : ''}
-      ${dok.status === 'perbaikan'? 'border-orange-200 bg-orange-50'    : ''}
-      ${dok.status === 'belum'    ? 'border-n200 bg-white'              : ''}
+      ${dok.status === 'valid'     ? 'border-green-200 bg-success-light' : ''}
+      ${dok.status === 'perbaikan' ? 'border-orange-200 bg-orange-50'    : ''}
+      ${dok.status === 'belum'     ? 'border-n200 bg-white'              : ''}
     `}>
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-2 flex-1 min-w-0">
-          <RiFileTextLine size={16} className="text-n400 flex-shrink-0" />
-          <div>
-            <p className="text-[10px] font-bold text-n400 uppercase tracking-wide">
-              {dok.jenis}{dok.sub_kategori ? ` · ${dok.sub_kategori}` : ''}
+          <RiFileTextLine size={14} className="text-n400 flex-shrink-0" />
+          <div className="min-w-0">
+            <p className="text-[12px] font-semibold text-n700 capitalize">
+              {dok.jenis.replace('_', ' ')}
+              {dok.sub_kategori && (
+                <span className="ml-1 text-[11px] font-normal text-n500">({dok.sub_kategori})</span>
+              )}
             </p>
             <a
-              href={(import.meta.env.VITE_STORAGE_URL || 'http://127.0.0.1:8000/storage') + '/' + dok.file_path}
+              href={`http://127.0.0.1:8000/storage/${dok.file_path}`}
               target="_blank"
-              rel="noopener noreferrer"
-              className="text-[12px] font-semibold text-primary hover:underline"
-              onClick={function(e) { e.stopPropagation() }}
+              rel="noreferrer"
+              className="text-[11px] text-primary hover:underline truncate block"
             >
               {dok.nama_file || dok.file_path?.split('/').pop()}
             </a>
@@ -232,13 +208,13 @@ function DetailPendaftar() {
             <RiCloseLine size={13} />
           </button>
           <span className={`text-[11px] font-semibold ml-1
-            ${dok.status === 'valid'    ? 'text-success'     : ''}
-            ${dok.status === 'perbaikan'? 'text-orange-500'  : ''}
-            ${dok.status === 'belum'    ? 'text-n400'        : ''}
+            ${dok.status === 'valid'     ? 'text-success'    : ''}
+            ${dok.status === 'perbaikan' ? 'text-orange-500' : ''}
+            ${dok.status === 'belum'     ? 'text-n400'       : ''}
           `}>
-            {dok.status === 'valid'     && <span className="flex items-center gap-0.5"><RiCheckLine  size={11}/> Valid</span>}
-            {dok.status === 'perbaikan' && <span className="flex items-center gap-0.5"><RiAlertLine  size={11}/> Perbaikan</span>}
-            {dok.status === 'belum'     && <span className="flex items-center gap-0.5"><RiTimeLine   size={11}/> Belum</span>}
+            {dok.status === 'valid'     && <span className="flex items-center gap-0.5"><RiCheckLine size={11}/> Valid</span>}
+            {dok.status === 'perbaikan' && <span className="flex items-center gap-0.5"><RiAlertLine size={11}/> Perbaikan</span>}
+            {dok.status === 'belum'     && <span className="flex items-center gap-0.5"><RiTimeLine  size={11}/> Belum</span>}
           </span>
         </div>
       </div>
@@ -250,8 +226,6 @@ function DetailPendaftar() {
       )}
     </div>
   )
-
-  const backPath = data.status === 'terverifikasi' ? '/admin/seleksi-saw' : '/admin/pendaftar'
 
   return (
     <DashboardLayout role={user?.role || 'operator'} user={userObj} activePath="/admin/pendaftar">
@@ -293,20 +267,20 @@ function DetailPendaftar() {
             <InfoRow label="Tempat/Tgl Lahir" value={`${data.data_diri?.tempat_lahir}, ${data.data_diri?.tgl_lahir
               ? new Date(data.data_diri.tgl_lahir).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })
               : '-'}`} />
-            <InfoRow label="Agama"            value={data.data_diri?.agama} />
-            <InfoRow label="Asal Sekolah"     value={data.data_diri?.asal_sekolah} />
-            <InfoRow label="Tahun Lulus"      value={data.data_diri?.tahun_lulus} />
-            <InfoRow label="Jalur Dipilih"    value={
+            <InfoRow label="Agama"         value={data.data_diri?.agama} />
+            <InfoRow label="Asal Sekolah"  value={data.data_diri?.asal_sekolah} />
+            <InfoRow label="Tahun Lulus"   value={data.data_diri?.tahun_lulus} />
+            <InfoRow label="Jalur Dipilih" value={
               <span className="flex items-center gap-1 font-semibold">
                 <RiTrophyLine size={13} className="text-warning" /> {data.jalur?.nama}
               </span>
             } />
-            {/* P1: Alamat domisili */}
-            {alamatLengkap && (
-              <InfoRow label="Alamat Domisili" value={
-                <span className="flex items-start gap-1">
-                  <RiMapPinLine size={13} className="text-primary flex-shrink-0 mt-0.5" />
-                  <span>{alamatLengkap}</span>
+            {/* R1: Tampilkan nama_desa dan jarak_km */}
+            {data.data_diri?.nama_desa && (
+              <InfoRow label="Desa Domisili" value={
+                <span className="flex items-center gap-1">
+                  <RiHomeSmileLine size={13} className="text-primary flex-shrink-0" />
+                  {data.data_diri.nama_desa}
                 </span>
               } />
             )}
@@ -317,7 +291,7 @@ function DetailPendaftar() {
             )}
           </div>
 
-          {/* P2: Nilai Rapor */}
+          {/* Nilai Rapor */}
           {nilaiRaporArr.length > 0 && (
             <div className="bg-white border border-n200 rounded-lg p-5 shadow-xs">
               <p className="text-[15px] font-bold font-poppins text-n800 mb-3">Nilai Rapor Per Semester</p>
@@ -352,41 +326,45 @@ function DetailPendaftar() {
             <InfoRow label="No. Telepon" value={data.data_orang_tua?.no_telepon} />
           </div>
 
-          {/* Input Nilai Kriteria SAW */}
+          {/* R2: Nilai Kriteria SAW — READ ONLY, tanpa form input */}
           {kriteriaList.length > 0 && (
             <div className="bg-white border border-n200 rounded-lg p-5 shadow-xs">
               <div className="flex items-center justify-between mb-3">
                 <p className="text-[15px] font-bold font-poppins text-n800">Nilai Kriteria SAW</p>
                 <span className="text-[11px] text-n400 bg-n50 border border-n200 px-2 py-0.5 rounded-pill">
-                  Otomatis dari formulir & dokumen
+                  Diisi otomatis oleh sistem
                 </span>
               </div>
-              {nilaiSuccess && <div className="mb-3 text-[12px] text-success font-semibold">{nilaiSuccess}</div>}
-              <div className="flex flex-col gap-3">
-                {kriteriaList.map(k => (
-                  <div key={k.id} className="flex items-center gap-3">
-                    <div className="flex-1">
-                      <p className="text-[12px] font-semibold text-n700">{k.nama}</p>
-                      <p className="text-[11px] text-n400">{k.deskripsi} · {k.jenis === 'benefit' ? 'Benefit' : 'Cost'} · Bobot {k.bobot}%</p>
+              <div className="flex flex-col gap-2">
+                {kriteriaList.map(k => {
+                  const nilaiObj = data.nilai_kriteria?.find(n => n.kriteria_id === k.id)
+                  const nilai    = nilaiObj ? parseFloat(nilaiObj.nilai) : null
+
+                  return (
+                    <div key={k.id} className="flex items-center gap-3 py-2 border-b border-n100 last:border-0">
+                      <div className="flex-1">
+                        <p className="text-[12px] font-semibold text-n700">{k.nama}</p>
+                        <p className="text-[11px] text-n400">
+                          {k.deskripsi} · {k.jenis === 'benefit' ? 'Benefit' : 'Cost'} · Bobot {k.bobot}%
+                        </p>
+                      </div>
+                      <div className={`w-20 text-center px-3 py-1.5 rounded-sm text-[13px] font-bold
+                        ${nilai !== null
+                          ? 'bg-primary-light text-primary border border-blue-200'
+                          : 'bg-n100 text-n400 border border-n200'}`}>
+                        {nilai !== null ? nilai.toFixed(2) : '—'}
+                      </div>
                     </div>
-                    <input
-                      type="number" min="0" max="100" placeholder="0-100"
-                      value={nilaiForm[k.id] || ''}
-                      onChange={e => setNilaiForm({ ...nilaiForm, [k.id]: e.target.value })}
-                      className="w-24 px-3 py-1.5 text-[13px] border-[1.5px] border-n200 rounded-sm outline-none focus:border-primary text-center"
-                    />
-                  </div>
-                ))}
+                  )
+                })}
               </div>
-              <div className="flex justify-end mt-4">
-                <Button size="sm" onClick={handleSimpanNilai} disabled={savingNilai}>
-                  {savingNilai ? <Spinner size="sm" color="white" /> : 'Simpan Nilai'}
-                </Button>
-              </div>
+              <p className="text-[11px] text-n400 mt-3">
+                Nilai diisi otomatis dari data formulir (rapor, desa, dokumen). Tidak dapat diubah manual.
+              </p>
             </div>
           )}
 
-          {/* O2: Tombol operator — hanya untuk menunggu/perbaikan */}
+          {/* O2: Tombol operator */}
           {showOperatorButtons && (
             <div className="bg-white border border-n200 rounded-lg p-5 shadow-xs">
               <p className="text-[15px] font-bold font-poppins text-n800 mb-3">Verifikasi Pendaftaran</p>
@@ -413,21 +391,33 @@ function DetailPendaftar() {
             </div>
           )}
 
-          {/* Admin: Keputusan Akhir */}
+          {/* R3: Admin — Keputusan Akhir hanya jika sudah_saw */}
           {isAdmin && (
             <div className="bg-white border border-n200 rounded-lg p-5 shadow-xs">
               <p className="text-[15px] font-bold font-poppins text-n800 mb-3">Keputusan Akhir</p>
-              <div className="flex gap-2 mb-3">
-                <Button variant="success" fullWidth onClick={() => setKonfirmasi({ open: true, tipe: 'terima' })}>
-                  <RiCheckLine size={14} /> Terima Pendaftar
-                </Button>
-                <Button variant="danger" fullWidth onClick={() => setKonfirmasi({ open: true, tipe: 'tolak' })}>
-                  <RiCloseLine size={14} /> Tolak Pendaftar
-                </Button>
-              </div>
-              <div className="bg-n50 border border-n200 rounded-sm px-3 py-2 text-[12px] text-n600">
-                <strong>Terima</strong> → pindah ke Hasil Seleksi · <strong>Tolak</strong> → tidak diterima
-              </div>
+              {canAdminDecide ? (
+                <>
+                  <div className="flex gap-2 mb-3">
+                    <Button variant="success" fullWidth onClick={() => setKonfirmasi({ open: true, tipe: 'terima' })}>
+                      <RiCheckLine size={14} /> Terima Pendaftar
+                    </Button>
+                    <Button variant="danger" fullWidth onClick={() => setKonfirmasi({ open: true, tipe: 'tolak' })}>
+                      <RiCloseLine size={14} /> Tolak Pendaftar
+                    </Button>
+                  </div>
+                  <div className="bg-n50 border border-n200 rounded-sm px-3 py-2 text-[12px] text-n600">
+                    <strong>Terima</strong> → pindah ke Hasil Seleksi · <strong>Tolak</strong> → tidak diterima
+                  </div>
+                </>
+              ) : (
+                <div className="bg-n50 border border-n200 rounded-sm px-3 py-2 text-[12px] text-n600">
+                  {!hasilStatus || hasilStatus === 'belum_diproses'
+                    ? 'Keputusan final dapat ditetapkan setelah ranking SAW dihitung oleh operator.'
+                    : hasilStatus === 'diterima' || hasilStatus === 'ditolak'
+                      ? `Keputusan sudah ditetapkan: ${hasilStatus === 'diterima' ? 'Diterima' : 'Ditolak'}.`
+                      : '—'}
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -445,7 +435,7 @@ function DetailPendaftar() {
         </div>
       </div>
 
-      {/* Modal catatan perbaikan dokumen */}
+      {/* Modal catatan perbaikan */}
       <Modal isOpen={catatanModal.open} onClose={() => setCatatanModal({ open: false, id: null, catatan: '' })} title="Catatan Perbaikan">
         <p className="text-[12px] text-n500 mb-3">Tulis catatan untuk pendaftar mengenai dokumen yang perlu diperbaiki.</p>
         <textarea rows={3} value={catatanModal.catatan}
@@ -462,7 +452,6 @@ function DetailPendaftar() {
         </div>
       </Modal>
 
-      {/* Modal konfirmasi operator: Valid */}
       <Modal isOpen={konfirmasi.open && konfirmasi.tipe === 'valid'}
         onClose={() => setKonfirmasi({ open: false, tipe: null })} title="Verifikasi Pendaftar">
         <p className="text-[13px] text-n600 mb-4">
@@ -476,11 +465,10 @@ function DetailPendaftar() {
         </div>
       </Modal>
 
-      {/* Modal konfirmasi operator: Kirim Perbaikan */}
       <Modal isOpen={konfirmasi.open && konfirmasi.tipe === 'perbaikan'}
         onClose={() => setKonfirmasi({ open: false, tipe: null })} title="Kirim Perbaikan">
         <p className="text-[13px] text-n600 mb-4">
-          Kirim notifikasi perbaikan ke pendaftar? Status akan berubah menjadi <strong>Perbaikan</strong> dan pendaftar dapat re-upload dokumen.
+          Kirim notifikasi perbaikan ke pendaftar? Status akan berubah menjadi <strong>Perbaikan</strong>.
         </p>
         <div className="flex gap-2 justify-end">
           <Button variant="ghost" onClick={() => setKonfirmasi({ open: false, tipe: null })}>Batal</Button>
@@ -490,14 +478,13 @@ function DetailPendaftar() {
         </div>
       </Modal>
 
-      {/* Modal konfirmasi admin: Keputusan Akhir */}
       <Modal isOpen={konfirmasi.open && (konfirmasi.tipe === 'terima' || konfirmasi.tipe === 'tolak')}
         onClose={() => setKonfirmasi({ open: false, tipe: null })}
         title={konfirmasi.tipe === 'terima' ? 'Terima Pendaftar' : 'Tolak Pendaftar'}>
         <p className="text-[13px] text-n600 mb-4">
           {konfirmasi.tipe === 'terima'
             ? 'Apakah kamu yakin ingin menerima pendaftar ini?'
-            : 'Apakah kamu yakin ingin menolak pendaftar ini? Tindakan ini tidak bisa dibatalkan.'}
+            : 'Apakah kamu yakin ingin menolak pendaftar ini?'}
         </p>
         <div className="flex gap-2 justify-end">
           <Button variant="ghost" onClick={() => setKonfirmasi({ open: false, tipe: null })}>Batal</Button>
