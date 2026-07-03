@@ -111,6 +111,13 @@ class AdminController extends Controller
         return response()->json($query->paginate(10));
     }
 
+    /**
+     * R3: Keputusan final (diterima/ditolak) hanya boleh dilakukan setelah
+     * hasil_status = sudah_saw. Status non-final (draft/menunggu/perbaikan/
+     * terverifikasi) tetap bisa diubah bebas seperti sebelumnya.
+     * Saat keputusan final ditetapkan, hasil_status ikut disinkronkan
+     * supaya konsisten dengan data yang dibaca di Hasil Seleksi (operator).
+     */
     public function updateStatus(Request $request, $id)
     {
         $request->validate([
@@ -118,17 +125,28 @@ class AdminController extends Controller
         ]);
 
         $pendaftaran = Pendaftaran::findOrFail($id);
-        $pendaftaran->update(['status' => $request->status]);
+        $isKeputusanFinal = in_array($request->status, ['diterima', 'ditolak']);
 
-        if ($request->status === 'diterima' || $request->status === 'ditolak') {
-            Seleksi::updateOrCreate(
-                ['pendaftaran_id' => $id],
-                [
-                    'status_lulus' => $request->status === 'diterima',
-                    'input_by'     => $request->user()->id,
-                ]
-            );
+        if ($isKeputusanFinal) {
+            $seleksi = Seleksi::where('pendaftaran_id', $id)->first();
+
+            // R3: Guard — keputusan final hanya bisa ditetapkan setelah SAW dihitung
+            if (!$seleksi || $seleksi->hasil_status !== 'sudah_saw') {
+                return response()->json([
+                    'message' => 'Keputusan final hanya bisa ditetapkan setelah ranking SAW dihitung.',
+                ], 422);
+            }
+
+            $hasilBaru = $request->status; // 'diterima' atau 'ditolak'
+
+            $seleksi->update([
+                'status_lulus' => $hasilBaru === 'diterima',
+                'hasil_status' => $hasilBaru,
+                'input_by'     => $request->user()->id,
+            ]);
         }
+
+        $pendaftaran->update(['status' => $request->status]);
 
         $this->log($request, 'update_status', 'pendaftaran', $id, 'Update status ke ' . $request->status);
 

@@ -11,7 +11,8 @@ use Illuminate\Http\Request;
 class SawController extends Controller
 {
     /**
-     * O3: Hitung SAW hanya untuk pendaftar berstatus terverifikasi.
+     * Hitung SAW hanya untuk pendaftar berstatus terverifikasi.
+     * R3: Set hasil_status = sudah_saw setelah ranking dihitung.
      */
     public function hitung(Request $request)
     {
@@ -19,9 +20,9 @@ class SawController extends Controller
             'jalur_id' => 'required|exists:jalur_masuk,id',
         ]);
 
-        $jalurId = $request->jalur_id;
-
+        $jalurId  = $request->jalur_id;
         $kriteria = Kriteria::where('jalur_id', $jalurId)->get();
+
         if ($kriteria->isEmpty()) {
             return response()->json(['message' => 'Tidak ada kriteria untuk jalur ini'], 404);
         }
@@ -47,7 +48,6 @@ class SawController extends Controller
         // Normalisasi SAW
         $nilaiNormalisasi = [];
         foreach ($kriteria as $k) {
-            $nilaiKolom = array_column(array_column($pendaftaran->toArray(), null, 'id'), null);
             $kolom = [];
             foreach ($pendaftaran as $p) {
                 $kolom[] = $nilaiMatrix[$p->id][$k->id];
@@ -85,12 +85,14 @@ class SawController extends Controller
         $hasil   = [];
 
         foreach ($skorAkhir as $pendaftaranId => $skor) {
+            // R3: Set hasil_status = sudah_saw, jangan ubah status_lulus dulu
             Seleksi::updateOrCreate(
                 ['pendaftaran_id' => $pendaftaranId],
                 [
-                    'skor_saw' => $skor,
-                    'ranking'  => $ranking,
-                    'input_by' => $request->user()->id,
+                    'skor_saw'     => $skor,
+                    'ranking'      => $ranking,
+                    'input_by'     => $request->user()->id,
+                    'hasil_status' => 'sudah_saw',
                 ]
             );
 
@@ -132,6 +134,7 @@ class SawController extends Controller
                 'jalur'          => $p->jalur->nama ?? '-',
                 'skor_saw'       => $p->seleksi->skor_saw ?? 0,
                 'ranking'        => $p->seleksi->ranking ?? '-',
+                'hasil_status'   => $p->seleksi->hasil_status ?? 'belum_diproses',
                 'status_lulus'   => $p->seleksi->status_lulus,
             ]);
 

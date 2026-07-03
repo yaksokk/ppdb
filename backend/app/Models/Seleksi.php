@@ -11,7 +11,7 @@ class Seleksi extends Model
     protected $fillable = [
         'pendaftaran_id', 'nilai', 'ranking',
         'status_lulus', 'catatan', 'input_by',
-        'skor_saw',
+        'skor_saw', 'hasil_status',
     ];
 
     protected $casts = [

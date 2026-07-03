@@ -6,7 +6,16 @@ import DashboardLayout from '../../../components/layout/DashboardLayout/Dashboar
 import operatorService from '../../../services/operator.service'
 import adminService from '../../../services/admin.service'
 import sawService from '../../../services/saw.service'
+import api from '../../../services/api'
 import useAuthStore from '../../../store/authStore'
+
+// R3: Label dan warna badge untuk hasil_status
+const HASIL_STATUS_LABEL = {
+  belum_diproses: { label: 'Belum Diproses',  variant: 'belum_diproses' },
+  sudah_saw:      { label: 'Sudah Diranking', variant: 'sudah_saw' },
+  diterima:       { label: 'Diterima',        variant: 'diterima' },
+  ditolak:        { label: 'Ditolak',         variant: 'ditolak' },
+}
 
 function SeleksiSaw() {
   const navigate = useNavigate()
@@ -46,9 +55,7 @@ function SeleksiSaw() {
 
   useEffect(() => {
     fetchData()
-    import('../../../services/api').then(({ default: api }) => {
-      api.get('/jalur-masuk').then(res => setJalurList(res.data.jalur))
-    })
+    api.get('/jalur-masuk').then(res => setJalurList(res.data.jalur))
   }, [page])
 
   const handleSearch = () => { setPage(1); fetchData({ page: 1 }) }
@@ -118,9 +125,9 @@ function SeleksiSaw() {
         <div className="flex justify-center py-20"><Spinner size="lg" /></div>
       ) : (
         <>
-          <Table headers={['No.', 'No. Daftar', 'Nama Siswa', 'Jenis Kelamin', 'Asal Sekolah', 'Jalur', 'Ranking', 'Skor SAW', 'Aksi']}>
+          <Table headers={['No.', 'No. Daftar', 'Nama Siswa', 'Jenis Kelamin', 'Asal Sekolah', 'Jalur', 'Ranking', 'Skor SAW', 'Status', 'Aksi']}>
             {data.length === 0 ? (
-              <tr><td colSpan={9}>
+              <tr><td colSpan={10}>
                 <EmptyState
                   icon={RiCalculatorLine}
                   title="Belum ada pendaftar terverifikasi"
@@ -128,28 +135,35 @@ function SeleksiSaw() {
                 />
               </td></tr>
             ) : (
-              data.map((d, i) => (
-                <Tr key={d.id}>
-                  <Td className="text-n500">{(page - 1) * 10 + i + 1}</Td>
-                  <Td className="font-semibold">{d.no_pendaftaran}</Td>
-                  <Td className="font-semibold text-n800">{d.data_diri?.nama_lengkap ?? '-'}</Td>
-                  <Td>{d.data_diri?.jenis_kelamin ?? '-'}</Td>
-                  <Td>{d.data_diri?.asal_sekolah ?? '-'}</Td>
-                  <Td className="font-semibold">{d.jalur?.nama ?? '-'}</Td>
-                  <Td className="font-bold text-primary text-center">
-                    {d.seleksi?.ranking ? `#${d.seleksi.ranking}` : '-'}
-                  </Td>
-                  <Td className="text-center font-semibold">
-                    {d.seleksi?.skor_saw ? parseFloat(d.seleksi.skor_saw).toFixed(4) : '-'}
-                  </Td>
-                  <Td>
-                    <Button size="xs" variant="ghost"
-                      onClick={() => navigate(`/admin/pendaftar/${d.id}`, { state: { from: '/admin/seleksi-saw' } })}>
-                      Detail
-                    </Button>
-                  </Td>
-                </Tr>
-              ))
+              data.map((d, i) => {
+                const hasilStatus = d.seleksi?.hasil_status || 'belum_diproses'
+                const cfg = HASIL_STATUS_LABEL[hasilStatus] || HASIL_STATUS_LABEL['belum_diproses']
+                return (
+                  <Tr key={d.id}>
+                    <Td className="text-n500">{(page - 1) * 10 + i + 1}</Td>
+                    <Td className="font-semibold">{d.no_pendaftaran}</Td>
+                    <Td className="font-semibold text-n800">{d.data_diri?.nama_lengkap ?? '-'}</Td>
+                    <Td>{d.data_diri?.jenis_kelamin ?? '-'}</Td>
+                    <Td>{d.data_diri?.asal_sekolah ?? '-'}</Td>
+                    <Td className="font-semibold">{d.jalur?.nama ?? '-'}</Td>
+                    <Td className="font-bold text-primary text-center">
+                      {d.seleksi?.ranking ? `#${d.seleksi.ranking}` : '-'}
+                    </Td>
+                    <Td className="text-center font-semibold">
+                      {d.seleksi?.skor_saw ? parseFloat(d.seleksi.skor_saw).toFixed(4) : '-'}
+                    </Td>
+                    <Td>
+                      <Badge variant={cfg.variant}>{cfg.label}</Badge>
+                    </Td>
+                    <Td>
+                      <Button size="xs" variant="ghost"
+                        onClick={() => navigate(`/admin/pendaftar/${d.id}`, { state: { from: '/admin/seleksi-saw' } })}>
+                        Detail
+                      </Button>
+                    </Td>
+                  </Tr>
+                )
+              })
             )}
           </Table>
 

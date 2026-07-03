@@ -13,6 +13,10 @@ function Badge({ variant = 'blue', children }) {
     terverifikasi: 'bg-blue-50 text-blue-600',
     diterima:      'bg-success-light text-success',
     ditolak:       'bg-danger-light text-danger',
+
+    // R3: status hasil seleksi SAW
+    belum_diproses: 'bg-n100 text-n500',
+    sudah_saw:      'bg-blue-50 text-blue-600',
   }
 
   return (

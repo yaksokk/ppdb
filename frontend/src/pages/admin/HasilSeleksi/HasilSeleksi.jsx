@@ -1,5 +1,8 @@
 import { useState, useEffect } from 'react'
-import { RiSearchLine, RiDownload2Line, RiCheckLine, RiCloseLine } from 'react-icons/ri'
+import {
+  RiSearchLine, RiDownload2Line, RiCheckLine,
+  RiCloseLine, RiTimeLine, RiBarChartLine,
+} from 'react-icons/ri'
 import { Badge, Button, Table, Tr, Td, EmptyState, Modal, Spinner } from '../../../components/common'
 import DashboardLayout from '../../../components/layout/DashboardLayout/DashboardLayout'
 import operatorService from '../../../services/operator.service'
@@ -7,15 +10,57 @@ import useAuthStore from '../../../store/authStore'
 import * as XLSX from 'xlsx'
 import { saveAs } from 'file-saver'
 
+// R3: Konfigurasi label dan warna per hasil_status
+const HASIL_STATUS_CONFIG = {
+  belum_diproses: {
+    label:   'Belum Diproses',
+    variant: 'belum_diproses',
+    icon:    RiTimeLine,
+  },
+  sudah_saw: {
+    label:   'Sudah Diranking',
+    variant: 'sudah_saw',
+    icon:    RiBarChartLine,
+  },
+  diterima: {
+    label:   'Diterima',
+    variant: 'diterima',
+    icon:    RiCheckLine,
+  },
+  ditolak: {
+    label:   'Tidak Diterima',
+    variant: 'ditolak',
+    icon:    RiCloseLine,
+  },
+}
+
+function HasilStatusBadge({ hasilStatus }) {
+  const config = HASIL_STATUS_CONFIG[hasilStatus] || HASIL_STATUS_CONFIG['belum_diproses']
+  const Icon   = config.icon
+  return (
+    <div className="flex items-center gap-1">
+      <Icon size={13} className={
+        hasilStatus === 'diterima'      ? 'text-success'   :
+        hasilStatus === 'ditolak'       ? 'text-danger'    :
+        hasilStatus === 'sudah_saw'     ? 'text-blue-600'  :
+        'text-n400'
+      } />
+      <Badge variant={config.variant}>{config.label}</Badge>
+    </div>
+  )
+}
+
 function HasilSeleksi() {
   const { user } = useAuthStore()
-  const [data, setData] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [search, setSearch] = useState('')
-  const [filterStatus, setFilterStatus] = useState('')
-  const [filterJalur, setFilterJalur] = useState('')
-  const [ubahModal, setUbahModal] = useState({ open: false, item: null })
-  const [saving, setSaving] = useState(false)
+
+  const [data,          setData]          = useState([])
+  const [loading,       setLoading]       = useState(true)
+  const [search,        setSearch]        = useState('')
+  const [filterStatus,  setFilterStatus]  = useState('')
+  const [filterJalur,   setFilterJalur]   = useState('')
+  const [ubahModal,     setUbahModal]     = useState({ open: false, item: null })
+  const [saving,        setSaving]        = useState(false)
+  const [errorMsg,      setErrorMsg]      = useState('')
 
   const userObj = {
     name: user?.name || 'Operator',
@@ -24,27 +69,26 @@ function HasilSeleksi() {
 
   const fetchData = () => {
     setLoading(true)
-    operatorService.getHasilSeleksi({ status: filterStatus, jalur_id: filterJalur })
+    operatorService.getHasilSeleksi({ hasil_status: filterStatus, jalur_id: filterJalur })
       .then(res => setData(res.data.hasil))
       .catch(err => console.error(err))
       .finally(() => setLoading(false))
   }
 
-  useEffect(() => {
-    fetchData()
-  }, [filterStatus, filterJalur])
-
+  useEffect(() => { fetchData() }, [filterStatus, filterJalur])
 
   const handleUbah = async (newStatus) => {
+    setErrorMsg('')
     setSaving(true)
     try {
       await operatorService.updateHasil(ubahModal.item.pendaftaran_id, {
-        status_lulus: newStatus === 'diterima'
+        status_lulus: newStatus === 'diterima',
       })
       fetchData()
       setUbahModal({ open: false, item: null })
     } catch (err) {
-      console.error(err)
+      // R3: tampilkan pesan error jika belum sudah_saw
+      setErrorMsg(err.response?.data?.message || 'Terjadi kesalahan.')
     } finally {
       setSaving(false)
     }
@@ -52,16 +96,16 @@ function HasilSeleksi() {
 
   const handleExport = () => {
     const exportData = filtered.map((d, i) => ({
-      'No': i + 1,
-      'Ranking': d.ranking ? `#${d.ranking}` : '-',
-      'Nama Siswa': d.nama,
-      'NISN': d.data_diri?.nisn ?? '-',
+      'No':            i + 1,
+      'Ranking':       d.ranking ? `#${d.ranking}` : '-',
+      'Nama Siswa':    d.nama,
+      'NISN':          d.data_diri?.nisn ?? '-',
       'Jenis Kelamin': d.data_diri?.jenis_kelamin ?? '-',
-      'Agama': d.data_diri?.agama ?? '-',
-      'Asal Sekolah': d.data_diri?.asal_sekolah ?? '-',
-      'Jalur': d.jalur?.nama ?? '-',
-      'Skor SAW': d.skor_saw ? parseFloat(d.skor_saw).toFixed(4) : '-',
-      'Status': d.status_lulus ? 'Diterima' : 'Tidak Diterima',
+      'Agama':         d.data_diri?.agama ?? '-',
+      'Asal Sekolah':  d.data_diri?.asal_sekolah ?? '-',
+      'Jalur':         d.jalur?.nama ?? '-',
+      'Skor SAW':      d.skor_saw ? parseFloat(d.skor_saw).toFixed(4) : '-',
+      'Status':        HASIL_STATUS_CONFIG[d.hasil_status]?.label ?? d.hasil_status,
     }))
 
     const ws = XLSX.utils.json_to_sheet(exportData)
@@ -74,14 +118,34 @@ function HasilSeleksi() {
 
   const filtered = data.filter(d => {
     const matchSearch = d.nama?.toLowerCase().includes(search.toLowerCase()) ||
-      d.nisn?.includes(search)
+                        d.nisn?.includes(search)
     return matchSearch
   })
+
+  // Hitung ringkasan per status
+  const summary = data.reduce((acc, d) => {
+    const s = d.hasil_status || 'belum_diproses'
+    acc[s]  = (acc[s] || 0) + 1
+    return acc
+  }, {})
 
   return (
     <DashboardLayout role="operator" user={userObj} activePath="/admin/seleksi">
       <div className="mb-5">
         <h1 className="text-[19px] font-extrabold font-poppins text-n800">Hasil Seleksi</h1>
+        <p className="text-[12px] text-n500 mt-0.5">
+          Kelola keputusan final pendaftar yang sudah diranking SAW
+        </p>
+      </div>
+
+      {/* R3: Ringkasan status */}
+      <div className="grid grid-cols-4 gap-3 mb-4">
+        {Object.entries(HASIL_STATUS_CONFIG).map(([key, cfg]) => (
+          <div key={key} className="bg-white border border-n200 rounded-lg p-3 shadow-xs">
+            <p className="text-[11px] text-n500 mb-1">{cfg.label}</p>
+            <p className="text-[22px] font-extrabold text-n800">{summary[key] ?? 0}</p>
+          </div>
+        ))}
       </div>
 
       <div className="flex gap-3 mb-4 flex-wrap">
@@ -93,9 +157,12 @@ function HasilSeleksi() {
           />
         </div>
 
+        {/* R3: Filter berdasarkan hasil_status */}
         <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)}
           className="px-3 py-[9px] text-[13px] border-[1.5px] border-n200 rounded-sm outline-none focus:border-primary bg-white cursor-pointer">
           <option value="">Semua Status</option>
+          <option value="belum_diproses">Belum Diproses</option>
+          <option value="sudah_saw">Sudah Diranking</option>
           <option value="diterima">Diterima</option>
           <option value="ditolak">Tidak Diterima</option>
         </select>
@@ -118,40 +185,38 @@ function HasilSeleksi() {
         <div className="flex justify-center py-20"><Spinner size="lg" /></div>
       ) : (
         <>
-          <Table headers={['No.', 'Ranking', 'Nama Siswa', 'NISN', 'Jenis Kelamin', 'Agama', 'Asal Sekolah', 'Jalur', 'Skor SAW', 'Status', 'Aksi']}>
+          <Table headers={['No.', 'Ranking', 'Nama Siswa', 'NISN', 'Jenis Kelamin', 'Asal Sekolah', 'Jalur', 'Skor SAW', 'Status', 'Aksi']}>
             {filtered.length === 0 ? (
-              <tr><td colSpan={9}>
-                <EmptyState icon={RiSearchLine} title="Data tidak ditemukan" description="Belum ada hasil seleksi." />
+              <tr><td colSpan={10}>
+                <EmptyState icon={RiSearchLine} title="Data tidak ditemukan" description="Belum ada pendaftar yang tampil di halaman ini." />
               </td></tr>
             ) : (
               filtered.map((d, i) => (
                 <Tr key={d.pendaftaran_id}>
                   <Td className="text-n500">{i + 1}</Td>
                   <Td className="font-bold text-primary text-center">
-                    {d.ranking ? `#${d.ranking}` : '-'}
+                    {d.ranking ? `#${d.ranking}` : '—'}
                   </Td>
                   <Td className="font-semibold text-n800">{d.nama}</Td>
                   <Td className="text-n600">{d.data_diri?.nisn ?? '-'}</Td>
                   <Td>{d.data_diri?.jenis_kelamin ?? '-'}</Td>
-                  <Td>{d.data_diri?.agama ?? '-'}</Td>
                   <Td>{d.data_diri?.asal_sekolah ?? '-'}</Td>
                   <Td className="font-semibold">{d.jalur?.nama ?? '-'}</Td>
                   <Td className="text-center font-semibold">
-                    {d.skor_saw ? parseFloat(d.skor_saw).toFixed(4) : '-'}
+                    {d.skor_saw ? parseFloat(d.skor_saw).toFixed(4) : '—'}
                   </Td>
                   <Td>
-                    <div className="flex items-center gap-1">
-                      {d.status_lulus
-                        ? <RiCheckLine size={13} className="text-success" />
-                        : <RiCloseLine size={13} className="text-danger" />}
-                      <Badge variant={d.status_lulus ? 'diterima' : 'ditolak'}>
-                        {d.status_lulus ? 'Diterima' : 'Tidak Diterima'}
-                      </Badge>
-                    </div>
+                    <HasilStatusBadge hasilStatus={d.hasil_status} />
                   </Td>
                   <Td>
-                    <Button size="xs" variant="ghost" onClick={() => setUbahModal({ open: true, item: d })}>
-                      Ubah
+                    {/* R3: Tombol Ubah hanya aktif jika sudah_saw */}
+                    <Button
+                      size="xs"
+                      variant={d.hasil_status === 'sudah_saw' ? 'primary' : 'ghost'}
+                      disabled={d.hasil_status !== 'sudah_saw'}
+                      onClick={() => { setErrorMsg(''); setUbahModal({ open: true, item: d }) }}
+                    >
+                      Keputusan
                     </Button>
                   </Td>
                 </Tr>
@@ -161,16 +226,23 @@ function HasilSeleksi() {
           <div className="mt-3">
             <p className="text-[12px] text-n500">{filtered.length} data ditampilkan</p>
           </div>
-
         </>
       )}
 
-      <Modal isOpen={ubahModal.open} onClose={() => setUbahModal({ open: false, item: null })} title="Ubah Status Seleksi">
+      <Modal isOpen={ubahModal.open} onClose={() => { setUbahModal({ open: false, item: null }); setErrorMsg('') }} title="Keputusan Final Seleksi">
         {ubahModal.item && (
           <>
-            <p className="text-[13px] text-n600 mb-4">
-              Ubah status seleksi untuk <strong>{ubahModal.item.nama}</strong>
+            <p className="text-[13px] text-n600 mb-1">
+              Tetapkan keputusan final untuk <strong>{ubahModal.item.nama}</strong>
             </p>
+            <p className="text-[12px] text-n500 mb-4">
+              Ranking: <strong>#{ubahModal.item.ranking}</strong> · Skor SAW: <strong>{ubahModal.item.skor_saw ? parseFloat(ubahModal.item.skor_saw).toFixed(4) : '—'}</strong>
+            </p>
+            {errorMsg && (
+              <div className="mb-3 px-3 py-2 bg-danger-light border border-red-200 rounded-sm text-[12px] text-danger">
+                {errorMsg}
+              </div>
+            )}
             <div className="flex gap-2">
               <Button variant="success" fullWidth disabled={saving} onClick={() => handleUbah('diterima')}>
                 {saving ? <Spinner size="sm" color="white" /> : <><RiCheckLine size={14} /> Diterima</>}
@@ -182,7 +254,6 @@ function HasilSeleksi() {
           </>
         )}
       </Modal>
-
     </DashboardLayout>
   )
 }
