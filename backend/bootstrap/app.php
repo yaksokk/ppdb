@@ -15,10 +15,11 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->statefulApi();
         $middleware->append(\Illuminate\Http\Middleware\HandleCors::class);
         $middleware->alias([
-            'role' => \Spatie\Permission\Middleware\RoleMiddleware::class,
+            'role'      => \Spatie\Permission\Middleware\RoleMiddleware::class,
+            // R4: alias middleware cek status PPDB
+            'cek.ppdb'  => \App\Http\Middleware\CekStatusPpdb::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //
     })->create();
-

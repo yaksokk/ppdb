@@ -26,6 +26,13 @@ api.interceptors.response.use(
       useAuthStore.getState().clearAuth()
       window.location.href = '/login'
     }
+    // R4: Tangani error PPDB_CLOSED — set flag di store lalu lempar ulang
+    if (
+      error.response?.status === 403 &&
+      error.response?.data?.code === 'PPDB_CLOSED'
+    ) {
+      useAuthStore.getState().setPpdbClosed(true)
+    }
     return Promise.reject(error)
   }
 )

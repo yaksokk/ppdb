@@ -8,12 +8,14 @@ const useAuthStore = create(
       token:           null,
       isAuthenticated: false,
       lastActivity:    null,
+      ppdbClosed:      false, // R4: flag PPDB ditutup
 
       setAuth: (user, token) => set({
         user,
         token,
         isAuthenticated: true,
         lastActivity: Date.now(),
+        ppdbClosed: false,
       }),
 
       clearAuth: () => set({
@@ -21,9 +23,13 @@ const useAuthStore = create(
         token:           null,
         isAuthenticated: false,
         lastActivity:    null,
+        ppdbClosed:      false,
       }),
 
       updateActivity: () => set({ lastActivity: Date.now() }),
+
+      // R4: set/clear status PPDB tutup
+      setPpdbClosed: (val) => set({ ppdbClosed: val }),
 
       isSessionExpired: () => {
         const { lastActivity } = get()
